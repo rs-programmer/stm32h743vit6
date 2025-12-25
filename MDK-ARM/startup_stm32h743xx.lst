@@ -46,22 +46,22 @@ ARM Macro Assembler    Page 1
    29 00000000         ;   <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
    30 00000000         ; </h>
    31 00000000         
-   32 00000000 00001000 
+   32 00000000 0000A000 
                        Stack_Size
-                               EQU              0x1000
+                               EQU              0xA000
    33 00000000         
    34 00000000                 AREA             STACK, NOINIT, READWRITE, ALIGN
 =3
    35 00000000         Stack_Mem
                                SPACE            Stack_Size
-   36 00001000         __initial_sp
-   37 00001000         
-   38 00001000         
-   39 00001000         ; <h> Heap Configuration
-   40 00001000         ;   <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
-   41 00001000         ; </h>
-   42 00001000         
-   43 00001000 00000000 
+   36 0000A000         __initial_sp
+   37 0000A000         
+   38 0000A000         
+   39 0000A000         ; <h> Heap Configuration
+   40 0000A000         ;   <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
+   41 0000A000         ; </h>
+   42 0000A000         
+   43 0000A000 00000000 
                        Heap_Size
 
 
@@ -70,8 +70,8 @@ ARM Macro Assembler    Page 2
 
 
                                EQU              0x000
-   44 00001000         
-   45 00001000                 AREA             HEAP, NOINIT, READWRITE, ALIGN=
+   44 0000A000         
+   45 0000A000                 AREA             HEAP, NOINIT, READWRITE, ALIGN=
 3
    46 00000000         __heap_base
    47 00000000         Heap_Mem
@@ -1265,10 +1265,9 @@ ARM Macro Assembler    Page 20
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M7.fp.dp --apcs=
 interwork --depend=stm32h743vit6\startup_stm32h743xx.d -ostm32h743vit6\startup_
 stm32h743xx.o -I.\RTE\_stm32h743vit6 -ID:\software\mdk_pack\ARM\CMSIS\5.9.0\CMS
-IS\Core\Include --predefine="__EVAL SETA 1" --predefine="__MICROLIB SETA 1" --p
-redefine="__UVISION_VERSION SETA 539" --predefine="_RTE_ SETA 1" --predefine="S
-TM32H743xx SETA 1" --predefine="_RTE_ SETA 1" --list=startup_stm32h743xx.lst st
-artup_stm32h743xx.s
+IS\Core\Include --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION 
+SETA 539" --predefine="_RTE_ SETA 1" --predefine="STM32H743xx SETA 1" --predefi
+ne="_RTE_ SETA 1" --list=startup_stm32h743xx.lst startup_stm32h743xx.s
 
 
 
@@ -1291,7 +1290,7 @@ Symbol: Stack_Mem
    Uses
       None
 Comment: Stack_Mem unused
-__initial_sp 00001000
+__initial_sp 0000A000
 
 Symbol: __initial_sp
    Definitions
@@ -2890,7 +2889,7 @@ Symbol: Heap_Size
    Uses
       At line 47 in file startup_stm32h743xx.s
 Comment: Heap_Size used once
-Stack_Size 00001000
+Stack_Size 0000A000
 
 Symbol: Stack_Size
    Definitions
@@ -2930,4 +2929,4 @@ Symbol: __main
       At line 244 in file startup_stm32h743xx.s
 Comment: __main used once
 2 symbols
-504 symbols in table
+503 symbols in table

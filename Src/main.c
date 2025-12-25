@@ -11,7 +11,9 @@ static void MPU_Initialize(void);
 static void MPU_Config(void);
 
 int main(void) {
+    uint16_t rxlen = 0;
     bool flag = false;
+    const char *str = "hello world\n";
 
     SCB_EnableICache();
     SCB_EnableDCache();
@@ -24,22 +26,23 @@ int main(void) {
     MX_UART1_Init();
     MX_KEY_Init();
 
+    // scanf_dma(uart1_rx_buffer, 12);
+
     while (1) {
-//        LED1_TOGGLE();
+        //        LED1_TOGGLE();
 
         if (!flag) {
-            scanf_it(uart1_rx_buffer, 10);
+            scanf_dma(uart1_rx_buffer, 10);
             flag = true;
         }
 
         if (uart1_rx_complete) {
-            printf_it(uart1_rx_buffer, strlen((char *)uart1_rx_buffer));
-//            memset(uart1_rx_buffer, 0, sizeof(uart1_rx_buffer));
+            printf_dma(uart1_rx_buffer, strlen(uart1_rx_buffer));
             uart1_rx_complete = false;
             flag = false;
         }
 
-//        HAL_Delay(1000);
+        HAL_Delay(10);
     }
 }
 
@@ -79,9 +82,9 @@ void SystemClock_Config(void) {
 
     /** Initializes the CPU, AHB and APB buses clocks
      */
-    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
-                                  RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 |
-                                  RCC_CLOCKTYPE_D3PCLK1 | RCC_CLOCKTYPE_D1PCLK1;
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 |
+                                  RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_D3PCLK1 |
+                                  RCC_CLOCKTYPE_D1PCLK1;
     RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
     RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
     RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV2;

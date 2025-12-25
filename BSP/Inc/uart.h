@@ -11,11 +11,50 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 
-#define printf_it(str, len) HAL_UART_Transmit_IT(&huart1, (uint8_t *)str, len)
-#define scanf_it(str, len) HAL_UART_Receive_IT(&huart1, (uint8_t *)str, len)
+#define printf_it(str, len)                                                                        \
+    do {                                                                                           \
+        __HAL_UART_SEND_REQ(&huart1, UART_TXDATA_FLUSH_REQUEST);                                   \
+        HAL_UART_Transmit_IT(&huart1, (uint8_t *)str, len);                                        \
+    } while (0)
+
+#define scanf_it(str, len)                                                                         \
+    do {                                                                                           \
+        __HAL_UART_SEND_REQ(&huart1, UART_RXDATA_FLUSH_REQUEST);                                   \
+        HAL_UART_Receive_IT(&huart1, (uint8_t *)str, len);                                         \
+    } while (0)
+
+#define printf_dma(str, len)                                                                       \
+    do {                                                                                           \
+        __HAL_UART_SEND_REQ(&huart1, UART_TXDATA_FLUSH_REQUEST);                                   \
+        HAL_UART_Transmit_DMA(&huart1, (uint8_t *)str, len);                                       \
+    } while (0)
+
+#define scanf_dma(str, len)                                                                        \
+    do {                                                                                           \
+        __HAL_UART_SEND_REQ(&huart1, UART_RXDATA_FLUSH_REQUEST);                                   \
+        HAL_UART_Receive_DMA(&huart1, (uint8_t *)str, len);                                        \
+    } while (0)
+
+#define scanf_idle(str, len, rxlen)                                                                \
+    do {                                                                                           \
+        __HAL_UART_SEND_REQ(&huart1, UART_RXDATA_FLUSH_REQUEST);                                   \
+        HAL_UARTEx_ReceiveToIdle(&huart1, (uint8_t *)str, len, rxlen, HAL_MAX_DELAY);              \
+    } while (0)
+
+#define scanf_idleit(str, len)                                                                     \
+    do {                                                                                           \
+        __HAL_UART_SEND_REQ(&huart1, UART_RXDATA_FLUSH_REQUEST);                                   \
+        HAL_UARTEx_ReceiveToIdle_IT(&huart1, (uint8_t *)str, len);                                 \
+    } while (0);
+
+#define scanf_idledma(str, len)                                                                    \
+    do {                                                                                           \
+        __HAL_UART_SEND_REQ(&huart1, UART_RXDATA_FLUSH_REQUEST);                                   \
+        HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *)str, len);                                \
+    } while (0);
 
 extern UART_HandleTypeDef huart1;
-extern uint8_t uart1_rx_buffer[128];
+extern __attribute__((aligned(64))) __IO uint8_t uart1_rx_buffer[15];
 extern bool uart1_rx_complete;
 
 /**
