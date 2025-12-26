@@ -1,8 +1,8 @@
 #include "uart.h"
 
-DMA_HandleTypeDef huart1_txdma;
-DMA_HandleTypeDef huart1_rxdma;
-UART_HandleTypeDef huart1;
+DMA_HandleTypeDef huart1_txdma = {0};
+DMA_HandleTypeDef huart1_rxdma = {0};
+UART_HandleTypeDef huart1 = {0};
 
 __attribute__((aligned(32))) __IO uint8_t uart1_rx_buffer[15];
 bool uart1_rx_complete = false;
@@ -10,12 +10,11 @@ bool uart1_rx_complete = false;
 HAL_StatusTypeDef MX_UART1_Init(void) {
     HAL_StatusTypeDef ret = HAL_OK;
 
-    // memset(uart1_rx_buffer, 0, sizeof(uart1_rx_buffer));
-
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART16;
     PeriphClkInitStruct.Usart16ClockSelection = RCC_USART16CLKSOURCE_PCLK2;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
+    ret = HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
+    if (ret != HAL_OK) {
         Error_Handler();
     }
 
@@ -50,7 +49,10 @@ HAL_StatusTypeDef MX_UART1_Init(void) {
     huart1_txdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
     huart1_txdma.Init.MemBurst = DMA_MBURST_INC4;
     huart1_txdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
-    HAL_DMA_DeInit(&huart1_txdma);
+    ret = HAL_DMA_DeInit(&huart1_txdma);
+    if (ret != HAL_OK) {
+        Error_Handler();
+    }
     ret = HAL_DMA_Init(&huart1_txdma);
     if (ret != HAL_OK) {
         Error_Handler();
@@ -70,7 +72,10 @@ HAL_StatusTypeDef MX_UART1_Init(void) {
     huart1_rxdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
     huart1_rxdma.Init.MemBurst = DMA_MBURST_INC4;
     huart1_rxdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
-    HAL_DMA_DeInit(&huart1_rxdma);
+    ret = HAL_DMA_DeInit(&huart1_rxdma);
+    if (ret != HAL_OK) {
+        Error_Handler();
+    }
     ret = HAL_DMA_Init(&huart1_rxdma);
     if (ret != HAL_OK) {
         Error_Handler();
@@ -87,21 +92,25 @@ HAL_StatusTypeDef MX_UART1_Init(void) {
     huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
     huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
     huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT; // 高级功能
-    if (HAL_UART_Init(&huart1) != HAL_OK) {
+    ret = HAL_UART_Init(&huart1);
+    if (ret != HAL_OK) {
         Error_Handler();
     }
 
     /* FIFO 空闲个数大于等于 1/8 时触发中断 */
-    if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK) {
+    ret = HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8);
+    if (ret != HAL_OK) {
         Error_Handler();
     }
 
     /* FIFO 接收数据个数大于等于 1/8 时触发中断 */
-    if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK) {
+    ret = HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8);
+    if (ret != HAL_OK) {
         Error_Handler();
     }
 
-    if (HAL_UARTEx_EnableFifoMode(&huart1) != HAL_OK) {
+    ret = HAL_UARTEx_EnableFifoMode(&huart1);
+    if (ret != HAL_OK) {
         Error_Handler();
     }
 

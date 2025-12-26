@@ -2,6 +2,7 @@
 #include "delay.h"
 #include "exti.h"
 #include "gpio.h"
+#include "rng.h"
 #include "systick.h"
 #include "uart.h"
 #include <stdio.h>
@@ -11,7 +12,7 @@ static void MPU_Initialize(void);
 static void MPU_Config(void);
 
 int main(void) {
-    uint16_t rxlen = 0;
+    uint32_t num = 0;
     bool flag = false;
     const char *str = "hello world\n";
 
@@ -25,24 +26,12 @@ int main(void) {
     MX_GPIO_Init();
     MX_UART1_Init();
     MX_KEY_Init();
-
-    // scanf_dma(uart1_rx_buffer, 12);
+    MX_RNG_Init();
 
     while (1) {
-        //        LED1_TOGGLE();
-
-        if (!flag) {
-            scanf_dma(uart1_rx_buffer, 10);
-            flag = true;
-        }
-
-        if (uart1_rx_complete) {
-            printf_dma(uart1_rx_buffer, strlen(uart1_rx_buffer));
-            uart1_rx_complete = false;
-            flag = false;
-        }
-
-        HAL_Delay(10);
+        rand(num);
+        printf("random: %u\n", num);
+        HAL_Delay(1000);
     }
 }
 
@@ -71,8 +60,8 @@ void SystemClock_Config(void) {
     RCC_OscInitStruct.PLL.PLLM = 5;
     RCC_OscInitStruct.PLL.PLLN = 160;
     RCC_OscInitStruct.PLL.PLLP = 2;
-    RCC_OscInitStruct.PLL.PLLQ = 2;
-    RCC_OscInitStruct.PLL.PLLR = 2;
+    RCC_OscInitStruct.PLL.PLLQ = 4;
+    RCC_OscInitStruct.PLL.PLLR = 4;
     RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_2;
     RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
     RCC_OscInitStruct.PLL.PLLFRACN = 0;
