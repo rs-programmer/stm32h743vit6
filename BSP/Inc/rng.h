@@ -10,7 +10,13 @@
 
 extern RNG_HandleTypeDef hrng1;
 extern uint32_t random;
+extern bool hrng1_complete;
 
+/**
+ * @brief Initialize RNG
+ * 
+ * @return HAL_StatusTypeDef HAL_OK if successful
+ */
 HAL_StatusTypeDef MX_RNG_Init(void);
 
 #endif

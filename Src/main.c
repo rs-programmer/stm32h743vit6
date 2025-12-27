@@ -5,6 +5,7 @@
 #include "rng.h"
 #include "systick.h"
 #include "uart.h"
+#include "watchdog.h"
 #include <stdio.h>
 
 void SystemClock_Config(void);
@@ -27,10 +28,15 @@ int main(void) {
     MX_UART1_Init();
     MX_KEY_Init();
     MX_RNG_Init();
+    // MX_WWDG_Init();
+    MX_IWDG_Init();
+
+    printf("process start\n");
 
     while (1) {
-        rand(num);
-        printf("random: %u\n", num);
+        printf("iwdg feed\n");
+
+        iwdg_feed();
         HAL_Delay(1000);
     }
 }
