@@ -3,10 +3,13 @@
 #include "exti.h"
 #include "gpio.h"
 #include "rng.h"
+#include "rtc.h"
 #include "systick.h"
 #include "uart.h"
 #include "watchdog.h"
 #include <stdio.h>
+
+#define RTC_BACKUP0_LOAD 0x58585858
 
 void SystemClock_Config(void);
 static void MPU_Initialize(void);
@@ -17,8 +20,12 @@ int main(void) {
     bool flag = false;
     const char *str = "hello world\n";
 
-    SCB_EnableICache();
-    SCB_EnableDCache();
+    RTC_TimeTypeDef sTime = RTC_DEFAULT_TIME;
+    RTC_DateTypeDef sDate = RTC_DEFAULT_DATE;
+    RTC_AlarmTypeDef Alarm_a = {0};
+
+    //    SCB_EnableICache();
+    //    SCB_EnableDCache();
     HAL_Init();
     // MPU_Config();
     SystemClock_Config();
@@ -30,11 +37,23 @@ int main(void) {
     MX_RNG_Init();
     // MX_WWDG_Init();
     MX_IWDG_Init();
+    MX_RTC_Init();
+
+    // num = HAL_RTCEx_BKUPRead(&hrtc1, RTC_BKP_DR0);
+    // if (num != RTC_BACKUP0_LOAD) {
+    MX_RTC_SetTimeDate(&hrtc1, &sTime, &sDate, RTC_FORMAT_BIN);
+    //     HAL_RTCEx_BKUPWrite(&hrtc1, RTC_BKP_DR0, RTC_BACKUP0_LOAD);
+    // }
+
+    MX_RTC_SetAlarm(&hrtc1, NULL);
 
     printf("process start\n");
 
     while (1) {
-        printf("iwdg feed\n");
+
+        MX_RTC_GetTimeDate(&hrtc1, &sTime, &sDate, RTC_FORMAT_BIN);
+        printf("%02d-%02d-%02d %02d:%02d:%02d %02d, week: %d\n", sDate.Year, sDate.Month,
+            sDate.Date, sTime.Hours, sTime.Minutes, sTime.Seconds, sTime.SubSeconds, sDate.WeekDay);
 
         iwdg_feed();
         HAL_Delay(1000);
@@ -59,8 +78,9 @@ void SystemClock_Config(void) {
     /** Initializes the RCC Oscillators according to the specified parameters
      * in the RCC_OscInitTypeDef structure.
      */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE;
     RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+    RCC_OscInitStruct.LSEState = RCC_LSE_ON;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
     RCC_OscInitStruct.PLL.PLLM = 5;
@@ -71,6 +91,7 @@ void SystemClock_Config(void) {
     RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_2;
     RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
     RCC_OscInitStruct.PLL.PLLFRACN = 0;
+    /* 可开启 HSE HSI LSE LSI PLL1 以及 PLL1 的配置参数 */
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
         Error_Handler();
     }

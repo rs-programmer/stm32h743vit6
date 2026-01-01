@@ -18,7 +18,7 @@ uint32_t HAL_GetCycleCount(void);
  * @brief Delay in microseconds.
  *
  * @param us Delay in microseconds.
- * @note us max : 10737418 = 2^32 / SystemCoreClock
+ * @note us max : 41943 = 2^24 / SystemCoreClock
  */
 void HAL_Delay_us(uint32_t us);
 

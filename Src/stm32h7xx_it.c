@@ -172,8 +172,8 @@ void SysTick_Handler(void) {
     /* USER CODE BEGIN SysTick_IRQn 0 */
 
     /* USER CODE END SysTick_IRQn 0 */
-    // HAL_IncTick();
-    printf("SysTick_Handler\r\n");
+    HAL_IncTick();
+    // printf("SysTick_Handler\r\n");
     /* USER CODE BEGIN SysTick_IRQn 1 */
 
     /* USER CODE END SysTick_IRQn 1 */
