@@ -15,6 +15,7 @@ HAL_StatusTypeDef MX_RTC_Init(void) {
         Error_Handler();
     }
     __HAL_RCC_RTC_CLK_ENABLE();
+    __HAL_RCC_RTC_ENABLE();
 
     hrtc1.Instance = RTC;
     hrtc1.Init.HourFormat = RTC_HOURFORMAT_24;

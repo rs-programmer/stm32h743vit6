@@ -7,6 +7,13 @@ extern "C" {
 
 #include "main.h"
 
+/**
+ * @brief Initialize IIC1
+ * 
+ * @return HAL_StatusTypeDef 
+ */
+HAL_StatusTypeDef MX_I2C1_Init(void);
+
 #ifdef __cplusplus
 }
 #endif

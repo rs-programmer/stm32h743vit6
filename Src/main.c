@@ -47,7 +47,7 @@ int main(void) {
 
     MX_RTC_SetAlarm(&hrtc1, NULL);
 
-    printf("process start\n");
+    printf("process start, revid: 0x%x\n", HAL_GetREVID());
 
     while (1) {
 
@@ -78,9 +78,12 @@ void SystemClock_Config(void) {
     /** Initializes the RCC Oscillators according to the specified parameters
      * in the RCC_OscInitTypeDef structure.
      */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE;
+    RCC_OscInitStruct.OscillatorType =
+        RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_CSI;
     RCC_OscInitStruct.HSEState = RCC_HSE_ON;
     RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+    RCC_OscInitStruct.CSIState = RCC_CSI_ON;
+    RCC_OscInitStruct.CSICalibrationValue = RCC_CSICALIBRATION_DEFAULT;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
     RCC_OscInitStruct.PLL.PLLM = 5;
@@ -91,7 +94,7 @@ void SystemClock_Config(void) {
     RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_2;
     RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
     RCC_OscInitStruct.PLL.PLLFRACN = 0;
-    /* 可开启 HSE HSI LSE LSI PLL1 以及 PLL1 的配置参数 */
+    /* 可开启 (HSE HSI LSE LSI CSI HSI48) PLL1 以及 PLL1 的配置参数 */
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
         Error_Handler();
     }
@@ -101,7 +104,7 @@ void SystemClock_Config(void) {
      * PLL_P: (25 / 5) * 160 / 2 = 400 MHZ
      * PLL_Q: (25 / 5) * 160 / 4 = 200 MHZ
      * PCC_R: (25 / 5) * 160 / 4 = 200 MHZ
-     * 
+     *
      * SYSCLK: PLL_P = 400 MHZ
      * CPU: SYSCLK / SYSCLKDivider = 400 MHZ
      * AHB1234: SYSCLK / SYSCLKDivider / AHBCLKDivider = 200 MHZ
