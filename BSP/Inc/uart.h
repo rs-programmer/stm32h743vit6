@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include "main.h"
 #include "stm32h7xx_hal.h"
 #include <stdbool.h>
 #include <stdint.h>

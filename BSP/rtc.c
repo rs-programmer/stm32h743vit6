@@ -14,9 +14,7 @@ HAL_StatusTypeDef MX_RTC_Init(void) {
     if (ret != HAL_OK) {
         Error_Handler();
     }
-
     __HAL_RCC_RTC_CLK_ENABLE();
-    __HAL_RCC_RTC_ENABLE();
 
     hrtc1.Instance = RTC;
     hrtc1.Init.HourFormat = RTC_HOURFORMAT_24;
@@ -37,6 +35,7 @@ HAL_StatusTypeDef MX_RTC_Init(void) {
     /* Tamp 入侵中断 */
 
     /* WAKUP 唤醒中断*/
+    __HAL_RCC_RTC_ENABLE();
     return ret;
 }
 

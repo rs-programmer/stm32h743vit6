@@ -97,6 +97,16 @@ void SystemClock_Config(void) {
     }
 
     /** Initializes the CPU, AHB and APB buses clocks
+     * HSE: 25 MHZ
+     * PLL_P: (25 / 5) * 160 / 2 = 400 MHZ
+     * PLL_Q: (25 / 5) * 160 / 4 = 200 MHZ
+     * PCC_R: (25 / 5) * 160 / 4 = 200 MHZ
+     * 
+     * SYSCLK: PLL_P = 400 MHZ
+     * CPU: SYSCLK / SYSCLKDivider = 400 MHZ
+     * AHB1234: SYSCLK / SYSCLKDivider / AHBCLKDivider = 200 MHZ
+     * APB1234: SYSCLK / SYSCLKDivider / APB(1234)CLKDivider = 100 MHZ
+     * SysTick: SYSCLK / SYSCLKDivider / (1 / 8) = 400 MHZ
      */
     RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 |
                                   RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_D3PCLK1 |

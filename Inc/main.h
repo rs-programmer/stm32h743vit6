@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "stm32h7xx_hal.h"
 void Error_Handler(void);
 
