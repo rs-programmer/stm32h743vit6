@@ -666,16 +666,14 @@ void BSP_SD_ReadCpltCallback(void)
 
 /* USER CODE BEGIN ErrorAbortCallbacks */
 /*
-==============================================================================================
-  depending on the SD_HAL_Driver version, either the HAL_SD_ErrorCallback() or HAL_SD_AbortCallback()
-  or both could be defined, activate the callbacks below when suitable and needed
-==============================================================================================
 void BSP_SD_AbortCallback(void)
 {
-}
-
-void BSP_SD_ErrorCallback(void)
-{
+#if (osCMSIS < 0x20000U)
+   osMessagePut(SDQueueID, RW_ABORT_MSG, 0);
+#else
+   const uint16_t msg = RW_ABORT_MSG;
+   osMessageQueuePut(SDQueueID, (const void *)&msg, 0, 0);
+#endif
 }
 */
 /* USER CODE END ErrorAbortCallbacks */

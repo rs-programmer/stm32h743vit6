@@ -8,7 +8,6 @@
 #include "rtc.h"
 #include "sd.h"
 #include "spi.h"
-#include "stm32h7xx_hal_gpio.h"
 #include "systick.h"
 #include "tim.h"
 #include "uart.h"
@@ -42,7 +41,7 @@ int main(void) {
     SCB_InvalidateICache();
 
     HAL_Init();
-    // MPU_Config();
+    MPU_Config();
     SystemClock_Config();
     PeriphCommonClock_Config();
 
@@ -65,7 +64,7 @@ int main(void) {
     MX_ADC1_Init();
     MX_TIM15_Init();
     // MX_SD_Init();
-    MX_FATFS_Init();
+    // MX_FATFS_Init();
 
     // num = HAL_RTCEx_BKUPRead(&hrtc1, RTC_BKP_DR0);
     // if (num != RTC_BACKUP0_LOAD) {
