@@ -1,9 +1,13 @@
 #include "main.h"
 #include "adc.h"
+#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include "delay.h"
 #include "exti.h"
+#include "fatfs.h"
 #include "gpio.h"
 #include "iic.h"
+#include "projdefs.h"
 #include "rng.h"
 #include "rtc.h"
 #include "sd.h"
@@ -15,7 +19,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "fatfs.h"
 
 #define RTC_BACKUP0_LOAD 0x58585858
 
@@ -23,6 +26,24 @@ void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MPU_Initialize(void);
 static void MPU_Config(void);
+
+osThreadId_t firstTaskHandle;
+osThreadId_t testTaskHandle;
+
+void first_task_func(void *argument) {
+    while (1) {
+        uart_debug("first_task_func\n");
+        LED1_TOGGLE();
+        osDelay(pdMS_TO_TICKS(500));
+    }
+}
+
+void test_task_func(void *argument) {
+    while (1) {
+        uart_debug("test_task_func\n");
+        osDelay(pdMS_TO_TICKS(1000));
+    }
+}
 
 int main(void) {
     uint32_t num = 0;
@@ -64,7 +85,7 @@ int main(void) {
     MX_ADC1_Init();
     MX_TIM15_Init();
     // MX_SD_Init();
-    // MX_FATFS_Init();
+    MX_FATFS_Init();
 
     // num = HAL_RTCEx_BKUPRead(&hrtc1, RTC_BKP_DR0);
     // if (num != RTC_BACKUP0_LOAD) {
@@ -78,6 +99,13 @@ int main(void) {
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
+
+    osKernelInitialize();
+
+    firstTaskHandle = osThreadNew(first_task_func, NULL, NULL);
+    testTaskHandle = osThreadNew(test_task_func, NULL, NULL);
+
+    osKernelStart();
 
     while (1) {
         // uart_debug("test code\n");
