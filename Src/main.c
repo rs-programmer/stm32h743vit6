@@ -102,8 +102,13 @@ int main(void) {
 
     osKernelInitialize();
 
-    firstTaskHandle = osThreadNew(first_task_func, NULL, NULL);
-    testTaskHandle = osThreadNew(test_task_func, NULL, NULL);
+    osThreadAttr_t first_attr = {0};
+    first_attr.name = "first_task";
+    firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
+
+    osThreadAttr_t test_attr = {0};
+    test_attr.name = "test_task";
+    testTaskHandle = osThreadNew(test_task_func, NULL, &test_attr);
 
     osKernelStart();
 
