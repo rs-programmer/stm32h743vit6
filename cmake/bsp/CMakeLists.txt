@@ -27,7 +27,8 @@ set(SOURCE
     ${CMAKE_SOURCE_DIR}/BSP/watchdog.c
     ${CMAKE_SOURCE_DIR}/BSP/tim.c
     ${CMAKE_SOURCE_DIR}/BSP/adc.c
-    # ${CMAKE_SOURCE_DIR}/BSP/sd.c
+    ${CMAKE_SOURCE_DIR}/BSP/sd.c
+    ${CMAKE_SOURCE_DIR}/BSP/tftlcd.c
 )
 
 set(PUBLIB_LIB_DIRS

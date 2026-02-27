@@ -25,6 +25,7 @@
 /* USER CODE END firstSection*/
 
 /* Includes ------------------------------------------------------------------*/
+#include "bsp_driver_sd.h"
 #include "ff_gen_drv.h"
 #include "sd_diskio.h"
 
@@ -65,7 +66,7 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
  * BSP_SD_Init() elsewhere in the application.
  */
 /* USER CODE BEGIN disableSDInit */
-/* #define DISABLE_SD_INIT */
+#define DISABLE_SD_INIT
 /* USER CODE END disableSDInit */
 
 /*
@@ -275,7 +276,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
   {
 #endif
     /* Fast path cause destination buffer is correctly aligned */
-    ret = BSP_SD_ReadBlocks_DMA((uint32_t*)buff, (uint32_t)(sector), count);
+    ret = BSP_SD_ReadBlocks_IT((uint32_t*)buff, (uint32_t)(sector), count);
 
     if (ret == MSD_OK) {
 #if (osCMSIS < 0x20000U)
@@ -447,7 +448,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
   SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, count*BLOCKSIZE + ((uint32_t)buff - alignedAddr));
 #endif
 
-  if(BSP_SD_WriteBlocks_DMA((uint32_t*)buff,
+  if(BSP_SD_WriteBlocks_IT((uint32_t*)buff,
                            (uint32_t) (sector),
                            count) == MSD_OK)
   {

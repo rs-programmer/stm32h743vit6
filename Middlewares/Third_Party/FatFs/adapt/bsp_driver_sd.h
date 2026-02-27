@@ -61,6 +61,8 @@ uint8_t BSP_SD_Init(void);
 uint8_t BSP_SD_ITConfig(void);
 uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks, uint32_t Timeout);
 uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks, uint32_t Timeout);
+uint8_t BSP_SD_ReadBlocks_IT(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks);
+uint8_t BSP_SD_WriteBlocks_IT(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks);
 uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks);
 uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks);
 uint8_t BSP_SD_Erase(uint32_t StartAddr, uint32_t EndAddr);

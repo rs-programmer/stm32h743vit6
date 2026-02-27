@@ -20,6 +20,7 @@ set(SOURCE
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FatFs/src/ff.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FatFs/src/option/syscall.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FatFs/src/option/unicode.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FatFs/adapt/bsp_driver_sd.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FatFs/adapt/fatfs.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FatFs/adapt/sd_diskio.c

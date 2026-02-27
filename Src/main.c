@@ -5,8 +5,10 @@
 #include "delay.h"
 #include "exti.h"
 #include "fatfs.h"
+#include "ff.h"
 #include "gpio.h"
 #include "iic.h"
+#include "portable.h"
 #include "projdefs.h"
 #include "rng.h"
 #include "rtc.h"
@@ -31,6 +33,70 @@ osThreadId_t firstTaskHandle;
 osThreadId_t testTaskHandle;
 
 void first_task_func(void *argument) {
+    FRESULT ret;
+    DIR dir;
+    uint8_t mkfs_retry = 3;
+    uint8_t *work_buf = NULL;
+
+    ret = f_mount(&SDFatFS, SDPath, 1);
+    uart_debug("f_mount initial res: %d\n", ret);
+    if (ret != FR_OK) {
+        uart_debug("f_mount initial failed! err: %d\n", ret);
+        goto MOUNT_FAILED;
+    }
+
+    ret = f_opendir(&dir, SDPath);
+    if (ret == FR_OK) {
+        f_closedir(&dir);
+        uart_debug("File system is valid!\n");
+    } else if (ret == FR_NO_FILESYSTEM) {
+        uart_debug("No valid file system, start mkfs...\n");
+        while (mkfs_retry--) {
+            work_buf = ff_malloc(_MAX_SS);
+            if (work_buf == NULL) {
+                uart_debug("mkfs malloc work buf failed! retry: %d\n", mkfs_retry);
+                continue;
+            }
+            ret = f_mkfs(SDPath, FM_FAT32, 0, work_buf, _MAX_SS);
+            ff_free(work_buf);
+            work_buf = NULL;
+
+            if (ret == FR_OK) {
+                uart_debug("mkfs success! retry: %d\n", 3 - mkfs_retry - 1);
+                f_mount(NULL, SDPath, 1);
+                ret = f_mount(&SDFatFS, SDPath, 1);
+                if (ret == FR_OK) {
+                    uart_debug("f_mount after mkfs success!\n");
+                    ret = f_opendir(&dir, SDPath);
+                    if (ret == FR_OK) {
+                        f_closedir(&dir);
+                        goto MOUNT_SUCCESS;
+                    }
+                }
+            } else {
+                uart_debug("mkfs failed! err: %d, retry: %d\n", ret, mkfs_retry);
+            }
+        }
+        uart_debug("mkfs all retry failed! final err: %d\n", ret);
+        goto MOUNT_FAILED;
+    } else {
+        uart_debug("Check file system failed! err: %d\n", ret);
+        goto MOUNT_FAILED;
+    }
+
+MOUNT_SUCCESS:
+    FIL file;
+    const char *write_str = "你好，我是nice⭐sss\n";
+    ret = f_open(&file, "0:/test.txt", FA_WRITE | FA_CREATE_ALWAYS);
+    if (ret == FR_OK) {
+        f_write(&file, write_str, strlen(write_str), NULL);
+        f_close(&file);
+        uart_debug("Write file test.txt success!\n");
+    } else {
+        uart_debug("f_open failed! err: %d\n", ret);
+    }
+
+MOUNT_FAILED:
     while (1) {
         uart_debug("first_task_func\n");
         LED1_TOGGLE();
@@ -84,7 +150,7 @@ int main(void) {
     MX_SPI1_Init(SPI_MODE_MASTER);
     MX_ADC1_Init();
     MX_TIM15_Init();
-    // MX_SD_Init();
+    MX_SD_Init();
     MX_FATFS_Init();
 
     // num = HAL_RTCEx_BKUPRead(&hrtc1, RTC_BKP_DR0);

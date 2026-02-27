@@ -5,7 +5,7 @@
 #include "stm32h7xx_hal_sd.h"
 #include "stm32h7xx_hal_sd_ex.h"
 
-SD_HandleTypeDef hsd1 = {0};
+// SD_HandleTypeDef hsd1 = {0};
 
 bool hsd1_tx_complete = false;
 bool hsd1_rx_complate = false;
@@ -74,6 +74,7 @@ HAL_StatusTypeDef MX_SD_Init(void) {
 
 void SDMMC1_IRQHandler(void) { HAL_SD_IRQHandler(&hsd1); }
 
+#if 0
 void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd) {
     /* IT / IDMA 传输完成 */
     if (hsd->Instance == SDMMC1) {
@@ -97,6 +98,8 @@ void HAL_SDEx_Write_DMADoubleBuf1CpltCallback(SD_HandleTypeDef *hsd) {}
 
 void MX_SD_Test(void) {
     HAL_StatusTypeDef ret = HAL_OK;
+    hsd1_tx_complete = false;
+    hsd1_rx_complate = false;
 
     /* 检测SD卡就绪 */
     SD_WAIT_TRANSFER();
@@ -150,3 +153,4 @@ void MX_SD_Test(void) {
         }
     }
 }
+#endif
