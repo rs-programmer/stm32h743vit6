@@ -6,6 +6,7 @@
 #include "exti.h"
 #include "fatfs.h"
 #include "ff.h"
+#include "fmc.h"
 #include "gpio.h"
 #include "iic.h"
 #include "portable.h"
@@ -38,63 +39,63 @@ void first_task_func(void *argument) {
     uint8_t mkfs_retry = 3;
     uint8_t *work_buf = NULL;
 
-    ret = f_mount(&SDFatFS, SDPath, 1);
-    uart_debug("f_mount initial res: %d\n", ret);
-    if (ret != FR_OK) {
-        uart_debug("f_mount initial failed! err: %d\n", ret);
-        goto MOUNT_FAILED;
-    }
+    //     ret = f_mount(&SDFatFS, SDPath, 1);
+    //     uart_debug("f_mount initial res: %d\n", ret);
+    //     if (ret != FR_OK) {
+    //         uart_debug("f_mount initial failed! err: %d\n", ret);
+    //         goto MOUNT_FAILED;
+    //     }
 
-    ret = f_opendir(&dir, SDPath);
-    if (ret == FR_OK) {
-        f_closedir(&dir);
-        uart_debug("File system is valid!\n");
-    } else if (ret == FR_NO_FILESYSTEM) {
-        uart_debug("No valid file system, start mkfs...\n");
-        while (mkfs_retry--) {
-            work_buf = ff_malloc(_MAX_SS);
-            if (work_buf == NULL) {
-                uart_debug("mkfs malloc work buf failed! retry: %d\n", mkfs_retry);
-                continue;
-            }
-            ret = f_mkfs(SDPath, FM_FAT32, 0, work_buf, _MAX_SS);
-            ff_free(work_buf);
-            work_buf = NULL;
+    //     ret = f_opendir(&dir, SDPath);
+    //     if (ret == FR_OK) {
+    //         f_closedir(&dir);
+    //         uart_debug("File system is valid!\n");
+    //     } else if (ret == FR_NO_FILESYSTEM) {
+    //         uart_debug("No valid file system, start mkfs...\n");
+    //         while (mkfs_retry--) {
+    //             work_buf = ff_malloc(_MAX_SS);
+    //             if (work_buf == NULL) {
+    //                 uart_debug("mkfs malloc work buf failed! retry: %d\n", mkfs_retry);
+    //                 continue;
+    //             }
+    //             ret = f_mkfs(SDPath, FM_FAT32, 0, work_buf, _MAX_SS);
+    //             ff_free(work_buf);
+    //             work_buf = NULL;
 
-            if (ret == FR_OK) {
-                uart_debug("mkfs success! retry: %d\n", 3 - mkfs_retry - 1);
-                f_mount(NULL, SDPath, 1);
-                ret = f_mount(&SDFatFS, SDPath, 1);
-                if (ret == FR_OK) {
-                    uart_debug("f_mount after mkfs success!\n");
-                    ret = f_opendir(&dir, SDPath);
-                    if (ret == FR_OK) {
-                        f_closedir(&dir);
-                        goto MOUNT_SUCCESS;
-                    }
-                }
-            } else {
-                uart_debug("mkfs failed! err: %d, retry: %d\n", ret, mkfs_retry);
-            }
-        }
-        uart_debug("mkfs all retry failed! final err: %d\n", ret);
-        goto MOUNT_FAILED;
-    } else {
-        uart_debug("Check file system failed! err: %d\n", ret);
-        goto MOUNT_FAILED;
-    }
+    //             if (ret == FR_OK) {
+    //                 uart_debug("mkfs success! retry: %d\n", 3 - mkfs_retry - 1);
+    //                 f_mount(NULL, SDPath, 1);
+    //                 ret = f_mount(&SDFatFS, SDPath, 1);
+    //                 if (ret == FR_OK) {
+    //                     uart_debug("f_mount after mkfs success!\n");
+    //                     ret = f_opendir(&dir, SDPath);
+    //                     if (ret == FR_OK) {
+    //                         f_closedir(&dir);
+    //                         goto MOUNT_SUCCESS;
+    //                     }
+    //                 }
+    //             } else {
+    //                 uart_debug("mkfs failed! err: %d, retry: %d\n", ret, mkfs_retry);
+    //             }
+    //         }
+    //         uart_debug("mkfs all retry failed! final err: %d\n", ret);
+    //         goto MOUNT_FAILED;
+    //     } else {
+    //         uart_debug("Check file system failed! err: %d\n", ret);
+    //         goto MOUNT_FAILED;
+    //     }
 
-MOUNT_SUCCESS:
-    FIL file;
-    const char *write_str = "你好，我是nice⭐sss\n";
-    ret = f_open(&file, "0:/test.txt", FA_WRITE | FA_CREATE_ALWAYS);
-    if (ret == FR_OK) {
-        f_write(&file, write_str, strlen(write_str), NULL);
-        f_close(&file);
-        uart_debug("Write file test.txt success!\n");
-    } else {
-        uart_debug("f_open failed! err: %d\n", ret);
-    }
+    // MOUNT_SUCCESS:
+    //     FIL file;
+    //     const char *write_str = "你好，我是nice⭐sss\n";
+    //     ret = f_open(&file, "0:/test.txt", FA_WRITE | FA_CREATE_ALWAYS);
+    //     if (ret == FR_OK) {
+    //         f_write(&file, write_str, strlen(write_str), NULL);
+    //         f_close(&file);
+    //         uart_debug("Write file test.txt success!\n");
+    //     } else {
+    //         uart_debug("f_open failed! err: %d\n", ret);
+    //     }
 
 MOUNT_FAILED:
     while (1) {
@@ -105,9 +106,27 @@ MOUNT_FAILED:
 }
 
 void test_task_func(void *argument) {
+    uint16_t cnt = 0;
+
+    fmc_msg_t msg = {0};
+    msg.cmd = LCD_CMD_CLEAR;
+
+    osThreadAttr_t first_attr = {0};
+    first_attr.name = "first_task";
+    first_attr.priority = osPriorityNormal;
+    first_attr.stack_size = 4096;
+    firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
+
     while (1) {
         uart_debug("test_task_func\n");
+        cnt += 100;
+        msg.u.lcd_msg.color = cnt;
+        MX_FMC_SendMsg(&msg);
         osDelay(pdMS_TO_TICKS(1000));
+
+        if (cnt >= 500) {
+            osThreadTerminate(firstTaskHandle);
+        }
     }
 }
 
@@ -138,6 +157,8 @@ int main(void) {
     HAL_SYSCFG_AnalogSwitchConfig(SYSCFG_SWITCH_PC2, SYSCFG_SWITCH_PC2_CLOSE);
     HAL_SYSCFG_AnalogSwitchConfig(SYSCFG_SWITCH_PC3, SYSCFG_SWITCH_PC3_CLOSE);
 
+    osKernelInitialize();
+
     // HAL_SysTick_Init();
     MX_GPIO_Init();
     MX_UART1_Init();
@@ -151,7 +172,6 @@ int main(void) {
     MX_ADC1_Init();
     MX_TIM15_Init();
     MX_SD_Init();
-    MX_FATFS_Init();
 
     // num = HAL_RTCEx_BKUPRead(&hrtc1, RTC_BKP_DR0);
     // if (num != RTC_BACKUP0_LOAD) {
@@ -161,19 +181,21 @@ int main(void) {
 
     // MX_RTC_SetAlarm(&hrtc1, NULL);
 
-    uart_debug("process start, revid: 0x%x\n", HAL_GetREVID());
+    uart_debug("process start, revid: 0x%x, tftlcd: %d\n", HAL_GetREVID(), lcddev.id);
 
-    /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
+    MX_FATFS_Init();
+    MX_FMC_Init();
 
-    osKernelInitialize();
-
-    osThreadAttr_t first_attr = {0};
-    first_attr.name = "first_task";
-    firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
+    // osThreadAttr_t first_attr = {0};
+    // first_attr.name = "first_task";
+    // first_attr.priority = osPriorityNormal;
+    // first_attr.stack_size = 4096;
+    // firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
 
     osThreadAttr_t test_attr = {0};
     test_attr.name = "test_task";
+    test_attr.stack_size = 4096;
+    test_attr.priority = osPriorityNormal;
     testTaskHandle = osThreadNew(test_task_func, NULL, &test_attr);
 
     osKernelStart();
@@ -362,6 +384,20 @@ void MPU_Config(void) {
     MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
     HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
+    /* FMC_BLOCK1_SRAM: 0x60000000 64M */
+    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+    MPU_InitStruct.Number = MPU_REGION_NUMBER5;
+    MPU_InitStruct.BaseAddress = 0x60000000;
+    MPU_InitStruct.Size = MPU_REGION_SIZE_64MB;
+    MPU_InitStruct.SubRegionDisable = 0x00;
+    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+    MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+    MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+    MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+    HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
     /* Enables the MPU */
     HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
@@ -379,6 +415,6 @@ void Error_Handler(void) {
 #ifdef USE_FULL_ASSERT
 
 void assert_failed(uint8_t *file, uint32_t line) {
-    uart_debug("Wrong parameters value: file %s on line %d\r\n", file, line);
+    uart_debug("Wrong file %s on line %u\n", file, line);
 }
 #endif

@@ -1,0 +1,691 @@
+#include "cmsis_os2.h"
+#include "lcd.h"
+#include "stm32h743xx.h"
+#include "stm32h7xx_hal_def.h"
+#include <stdint.h>
+#if (FMC_LCD_MODE_DMA == 1)
+#include "lcd.h"
+#include "lcdfont.h"
+#include "stdlib.h"
+
+#include "cmsis_os.h"
+#include "fmc.h"
+#include "lcd_ex.c"
+
+#define LCD_DMA_BUFFER_SIZE 1024
+#define LCD_DMA_TRANSFER_SIZE 0xFFFF
+
+#define LCD_MUTEX_ACQUIRE() osSemaphoreAcquire(lcd_mutex, osWaitForever)
+#define LCD_MUTEX_RELEASE() osSemaphoreRelease(lcd_mutex)
+
+typedef HAL_StatusTypeDef (*lcd_func_t)(lcd_msg_t *msg);
+
+SRAM_HandleTypeDef hsram;
+DMA_HandleTypeDef hsram_dma = {0};
+
+_lcd_dev lcddev;
+
+osSemaphoreId_t lcd_mutex = NULL;
+
+__RAM_DMA uint8_t lcd_dma_buffer[LCD_DMA_BUFFER_SIZE];
+
+void lcd_wr_data(volatile uint16_t data) {
+    data = data;
+    LCD->LCD_RAM = data;
+}
+
+void lcd_wr_regno(volatile uint16_t regno) {
+    regno = regno;
+    LCD->LCD_REG = regno;
+}
+
+void lcd_write_reg(uint16_t regno, uint16_t data) {
+    LCD->LCD_REG = regno; /* 写入要写的寄存器序号 */
+    LCD->LCD_RAM = data;  /* 写入数据 */
+}
+
+static uint16_t lcd_rd_data(void) {
+    volatile uint16_t ram; /* 防止被优化 */
+    ram = LCD->LCD_RAM;
+    return ram;
+}
+
+static void lcd_opt_delay(uint32_t i) {
+    while (i--)
+        ; /* 使用AC6时空循环可能被优化,可使用while(1) __asm volatile(""); */
+}
+
+void lcd_write_ram_prepare(void) { LCD->LCD_REG = lcddev.wramcmd; }
+
+uint32_t lcd_read_point(uint16_t x, uint16_t y) {
+    uint16_t r = 0, g = 0, b = 0;
+
+    if (x >= lcddev.width || y >= lcddev.height) {
+        return 0; /* 超过了范围,直接返回 */
+    }
+
+    lcd_set_cursor(x, y); /* 设置坐标 */
+
+    if (lcddev.id == 0x5510) {
+        lcd_wr_regno(0x2E00); /* 5510 发送读GRAM指令 */
+    } else {
+        lcd_wr_regno(0x2E); /* 其他IC(7796/5310/7789)发送读GRAM指令 */
+    }
+
+    r = lcd_rd_data(); /* 假读(dummy read) */
+
+    lcd_opt_delay(2);
+    r = lcd_rd_data(); /* 实际坐标颜色 */
+
+    if (lcddev.id == 0x7796) /* 7796 一次读取一个像素值 */
+    {
+        return r;
+    }
+
+    /* 5310/5510/7789 要分2次读出 */
+    lcd_opt_delay(2);
+    b = lcd_rd_data();
+    g = r & 0XFF; /* 对于 5310/5510/7789, 第一次读取的是RG的值,R在前,G在后,各占8位 */
+    g <<= 8;
+
+    return (((r >> 11) << 11) | ((g >> 10) << 5) | (b >> 11)); /* 5310/5510/7789 需要公式转换一下 */
+}
+
+void lcd_display_on(void) {
+    if (lcddev.id == 0X5510) /* 5510开启显示指令 */
+    {
+        lcd_wr_regno(0X2900); /* 开启显示 */
+    } else                    /* 5310/7789/7796 等发送开启显示指令 */
+    {
+        lcd_wr_regno(0X29); /* 开启显示 */
+    }
+}
+
+void lcd_display_off(void) {
+    if (lcddev.id == 0X5510) /* 5510关闭显示指令 */
+    {
+        lcd_wr_regno(0X2800); /* 关闭显示 */
+    } else                    /* 5310/7789/7796 等发送开启显示指令 */
+    {
+        lcd_wr_regno(0X28); /* 关闭显示 */
+    }
+}
+
+void lcd_set_cursor(uint16_t x, uint16_t y) {
+    if (lcddev.id == 0X5510) /* 5510设置坐标 */
+    {
+        lcd_wr_regno(lcddev.setxcmd);
+        lcd_wr_data(x >> 8);
+        lcd_wr_regno(lcddev.setxcmd + 1);
+        lcd_wr_data(x & 0XFF);
+        lcd_wr_regno(lcddev.setycmd);
+        lcd_wr_data(y >> 8);
+        lcd_wr_regno(lcddev.setycmd + 1);
+        lcd_wr_data(y & 0XFF);
+    } else /* 5310/7789/7796设置坐标 */
+    {
+        lcd_wr_regno(lcddev.setxcmd);
+        lcd_wr_data(x >> 8);
+        lcd_wr_data(x & 0XFF);
+        lcd_wr_regno(lcddev.setycmd);
+        lcd_wr_data(y >> 8);
+        lcd_wr_data(y & 0XFF);
+    }
+}
+
+void lcd_scan_dir(uint8_t dir) {
+    uint16_t regval = 0;
+    uint16_t dirreg = 0;
+    uint16_t temp;
+
+    /* 横屏时，IC改变扫描方向！竖屏时, IC不改变扫描方向 */
+    if (lcddev.dir == 1) {
+        switch (dir) /* 方向转换 */
+        {
+        case 0:
+            dir = 6;
+            break;
+
+        case 1:
+            dir = 7;
+            break;
+
+        case 2:
+            dir = 4;
+            break;
+
+        case 3:
+            dir = 5;
+            break;
+
+        case 4:
+            dir = 1;
+            break;
+
+        case 5:
+            dir = 0;
+            break;
+
+        case 6:
+            dir = 3;
+            break;
+
+        case 7:
+            dir = 2;
+            break;
+        }
+    }
+
+    /* 根据扫描方式 设置 0X36/0X3600 寄存器 bit 5,6,7 位的值 */
+    switch (dir) {
+    case L2R_U2D: /* 从左到右,从上到下 */
+        regval |= (0 << 7) | (0 << 6) | (0 << 5);
+        break;
+
+    case L2R_D2U: /* 从左到右,从下到上 */
+        regval |= (1 << 7) | (0 << 6) | (0 << 5);
+        break;
+
+    case R2L_U2D: /* 从右到左,从上到下 */
+        regval |= (0 << 7) | (1 << 6) | (0 << 5);
+        break;
+
+    case R2L_D2U: /* 从右到左,从下到上 */
+        regval |= (1 << 7) | (1 << 6) | (0 << 5);
+        break;
+
+    case U2D_L2R: /* 从上到下,从左到右 */
+        regval |= (0 << 7) | (0 << 6) | (1 << 5);
+        break;
+
+    case U2D_R2L: /* 从上到下,从右到左 */
+        regval |= (0 << 7) | (1 << 6) | (1 << 5);
+        break;
+
+    case D2U_L2R: /* 从下到上,从左到右 */
+        regval |= (1 << 7) | (0 << 6) | (1 << 5);
+        break;
+
+    case D2U_R2L: /* 从下到上,从右到左 */
+        regval |= (1 << 7) | (1 << 6) | (1 << 5);
+        break;
+    }
+
+    dirreg = 0X36; /* 对绝大部分驱动IC, 由0X36寄存器控制 */
+
+    if (lcddev.id == 0X5510) {
+        dirreg = 0X3600; /* 对于5510, 和其他驱动ic的寄存器有差异 */
+    }
+
+    /* 7789 & 7796 要设置BGR位 */
+    if (lcddev.id == 0X7789 || lcddev.id == 0X7796) {
+        regval |= 0X08;
+    }
+
+    lcd_write_reg(dirreg, regval);
+
+    if (regval & 0X20) {
+        if (lcddev.width < lcddev.height) /* 交换X,Y */
+        {
+            temp = lcddev.width;
+            lcddev.width = lcddev.height;
+            lcddev.height = temp;
+        }
+    } else {
+        if (lcddev.width > lcddev.height) /* 交换X,Y */
+        {
+            temp = lcddev.width;
+            lcddev.width = lcddev.height;
+            lcddev.height = temp;
+        }
+    }
+
+    /* 设置显示区域(开窗)大小 */
+    if (lcddev.id == 0X5510) {
+        lcd_wr_regno(lcddev.setxcmd);
+        lcd_wr_data(0);
+        lcd_wr_regno(lcddev.setxcmd + 1);
+        lcd_wr_data(0);
+        lcd_wr_regno(lcddev.setxcmd + 2);
+        lcd_wr_data((lcddev.width - 1) >> 8);
+        lcd_wr_regno(lcddev.setxcmd + 3);
+        lcd_wr_data((lcddev.width - 1) & 0XFF);
+        lcd_wr_regno(lcddev.setycmd);
+        lcd_wr_data(0);
+        lcd_wr_regno(lcddev.setycmd + 1);
+        lcd_wr_data(0);
+        lcd_wr_regno(lcddev.setycmd + 2);
+        lcd_wr_data((lcddev.height - 1) >> 8);
+        lcd_wr_regno(lcddev.setycmd + 3);
+        lcd_wr_data((lcddev.height - 1) & 0XFF);
+    } else {
+        lcd_wr_regno(lcddev.setxcmd);
+        lcd_wr_data(0);
+        lcd_wr_data(0);
+        lcd_wr_data((lcddev.width - 1) >> 8);
+        lcd_wr_data((lcddev.width - 1) & 0XFF);
+        lcd_wr_regno(lcddev.setycmd);
+        lcd_wr_data(0);
+        lcd_wr_data(0);
+        lcd_wr_data((lcddev.height - 1) >> 8);
+        lcd_wr_data((lcddev.height - 1) & 0XFF);
+    }
+}
+
+void lcd_draw_point(uint16_t x, uint16_t y, uint32_t color) {
+    lcd_set_cursor(x, y);    /* 设置光标位置 */
+    lcd_write_ram_prepare(); /* 开始写入GRAM */
+    LCD->LCD_RAM = color;
+}
+
+void lcd_display_dir(uint8_t dir) {
+    lcddev.dir = dir; /* 竖屏/横屏 */
+
+    if (dir == 0) /* 竖屏 */
+    {
+        lcddev.width = 240;
+        lcddev.height = 320;
+
+        if (lcddev.id == 0x5510) {
+            lcddev.wramcmd = 0X2C00; /* 设置写入GRAM的指令 */
+            lcddev.setxcmd = 0X2A00; /* 设置写X坐标指令 */
+            lcddev.setycmd = 0X2B00; /* 设置写Y坐标指令 */
+            lcddev.width = 480;      /* 设置宽度480 */
+            lcddev.height = 800;     /* 设置高度800 */
+        } else                       /* 其他IC, 包括: 5310/7789/7796等IC */
+        {
+            lcddev.wramcmd = 0X2C;
+            lcddev.setxcmd = 0X2A;
+            lcddev.setycmd = 0X2B;
+        }
+
+        if (lcddev.id == 0X5310 || lcddev.id == 0X7796) /* 如果是5310/7796 则表示是 320*480分辨率 */
+        {
+            lcddev.width = 320;
+            lcddev.height = 480;
+        }
+    } else /* 横屏 */
+    {
+        lcddev.width = 320;  /* 默认宽度 */
+        lcddev.height = 240; /* 默认高度 */
+
+        if (lcddev.id == 0x5510) {
+            lcddev.wramcmd = 0X2C00; /* 设置写入GRAM的指令 */
+            lcddev.setxcmd = 0X2A00; /* 设置写X坐标指令 */
+            lcddev.setycmd = 0X2B00; /* 设置写Y坐标指令 */
+            lcddev.width = 800;      /* 设置宽度800 */
+            lcddev.height = 480;     /* 设置高度480 */
+        } else                       /* 其他IC, 包括: 5310/7789/7796等IC */
+        {
+            lcddev.wramcmd = 0X2C;
+            lcddev.setxcmd = 0X2A;
+            lcddev.setycmd = 0X2B;
+        }
+
+        if (lcddev.id == 0X5310 || lcddev.id == 0X7796) /* 如果是5310/7796 则表示是 320*480分辨率 */
+        {
+            lcddev.width = 480;
+            lcddev.height = 320;
+        }
+    }
+
+    lcd_scan_dir(DFT_SCAN_DIR); /* 默认扫描方向 */
+}
+
+void lcd_set_window(uint16_t sx, uint16_t sy, uint16_t width, uint16_t height) {
+    uint16_t twidth, theight;
+    twidth = sx + width - 1;
+    theight = sy + height - 1;
+
+    if (lcddev.id == 0X5510) /* 5510设置窗口 */
+    {
+        lcd_wr_regno(lcddev.setxcmd);
+        lcd_wr_data(sx >> 8);
+        lcd_wr_regno(lcddev.setxcmd + 1);
+        lcd_wr_data(sx & 0XFF);
+        lcd_wr_regno(lcddev.setxcmd + 2);
+        lcd_wr_data(twidth >> 8);
+        lcd_wr_regno(lcddev.setxcmd + 3);
+        lcd_wr_data(twidth & 0XFF);
+        lcd_wr_regno(lcddev.setycmd);
+        lcd_wr_data(sy >> 8);
+        lcd_wr_regno(lcddev.setycmd + 1);
+        lcd_wr_data(sy & 0XFF);
+        lcd_wr_regno(lcddev.setycmd + 2);
+        lcd_wr_data(theight >> 8);
+        lcd_wr_regno(lcddev.setycmd + 3);
+        lcd_wr_data(theight & 0XFF);
+    } else /* 5310/7789/7796设置窗口 */
+    {
+        lcd_wr_regno(lcddev.setxcmd);
+        lcd_wr_data(sx >> 8);
+        lcd_wr_data(sx & 0XFF);
+        lcd_wr_data(twidth >> 8);
+        lcd_wr_data(twidth & 0XFF);
+        lcd_wr_regno(lcddev.setycmd);
+        lcd_wr_data(sy >> 8);
+        lcd_wr_data(sy & 0XFF);
+        lcd_wr_data(theight >> 8);
+        lcd_wr_data(theight & 0XFF);
+    }
+}
+
+void LCD_DMATransmitCplt(DMA_HandleTypeDef *hdma) {
+    /* Disable the MDMA channel */
+    __HAL_DMA_DISABLE(hdma);
+
+    LCD_MUTEX_RELEASE();
+}
+
+/**
+ * @brief
+ *
+ * @param src_inc @ref DMA_PINC_ENABLE / DMA_PINC_DISABLE
+ * @return HAL_StatusTypeDef
+ */
+HAL_StatusTypeDef LCD_DMA_Init(uint32_t src_inc) {
+    HAL_StatusTypeDef ret = HAL_OK;
+
+    __HAL_RCC_DMA1_CLK_ENABLE();
+
+    /* DMA 配置 */
+    hsram_dma.Instance = DMA1_Stream7;
+    hsram_dma.Init.Request = DMA_REQUEST_MEM2MEM; /* 内存到内存传输 */
+    hsram_dma.Init.Direction = DMA_MEMORY_TO_MEMORY;
+    hsram_dma.Init.PeriphInc = src_inc;       /* 源 */
+    hsram_dma.Init.MemInc = DMA_MINC_DISABLE; /* 目标 */
+    hsram_dma.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    hsram_dma.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+    hsram_dma.Init.Mode = DMA_NORMAL;
+    hsram_dma.Init.Priority = DMA_PRIORITY_MEDIUM;
+    hsram_dma.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+    hsram_dma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    hsram_dma.Init.MemBurst = DMA_PBURST_SINGLE;
+    hsram_dma.Init.PeriphBurst = DMA_PBURST_SINGLE;
+    ret = HAL_DMA_DeInit(&hsram_dma);
+    if (ret != HAL_OK) {
+        Error_Handler();
+    }
+    ret = HAL_DMA_Init(&hsram_dma);
+    if (ret != HAL_OK) {
+        Error_Handler();
+    }
+
+    hsram_dma.XferCpltCallback = LCD_DMATransmitCplt;
+    HAL_NVIC_SetPriority(DMA1_Stream7_IRQn, 10, 0);
+    HAL_NVIC_EnableIRQ(DMA1_Stream7_IRQn);
+    return ret;
+}
+
+void DMA1_Stream7_IRQHandler(void) { HAL_DMA_IRQHandler(&hsram_dma); }
+
+/**
+ * @brief 传输数据到LCD GRAM
+ *
+ * @param src_inc @ref DMA_PINC_ENABLE / DMA_PINC_DISABLE
+ * @param src 源地址, DMA可访问的32字节对齐的地址
+ * @param len 数据单次传输长度
+ * @param cnt 重复传输次数
+ * @return HAL_StatusTypeDef
+ */
+HAL_StatusTypeDef LCD_Transmit_DMA(uint32_t src_inc, uint32_t src, uint32_t len, uint32_t cnt) {
+    HAL_StatusTypeDef ret = HAL_OK;
+    uint32_t trans_size;
+    uint32_t total_size = len * cnt;
+    total_size /= 2; /* DMA 每次搬移2字节 */
+
+    SCB_CleanDCache_by_Addr((uint32_t *)src, len);
+
+    while (total_size > 0) {
+        LCD_DMA_Init(src_inc);
+        trans_size = uapi_min(LCD_DMA_TRANSFER_SIZE, total_size);
+        ret = HAL_DMA_Start_IT(&hsram_dma, src, LCD_RAM_ADDR, trans_size);
+        assert_param(ret == HAL_OK);
+        total_size -= trans_size;
+        LCD_MUTEX_ACQUIRE();
+    }
+
+    return ret;
+}
+
+void MX_LCD_Init(void) {
+    GPIO_InitTypeDef gpio_init_struct;
+    FMC_NORSRAM_TimingTypeDef fmc_read_handle;
+    FMC_NORSRAM_TimingTypeDef fmc_write_handle;
+
+    LCD_CS_GPIO_CLK_ENABLE();  /* LCD_CS脚时钟使能 */
+    LCD_WR_GPIO_CLK_ENABLE();  /* LCD_WR脚时钟使能 */
+    LCD_RD_GPIO_CLK_ENABLE();  /* LCD_RD脚时钟使能 */
+    LCD_RS_GPIO_CLK_ENABLE();  /* LCD_RS脚时钟使能 */
+    LCD_BL_GPIO_CLK_ENABLE();  /* LCD_BL脚时钟使能 */
+    LCD_RST_GPIO_CLK_ENABLE(); /* LCD_RST脚时钟使能 */
+
+    gpio_init_struct.Pin = LCD_CS_GPIO_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_AF_PP;            /* 复用推挽 */
+    gpio_init_struct.Pull = GPIO_PULLUP;                /* 上拉 */
+    gpio_init_struct.Speed = GPIO_SPEED_FREQ_HIGH;      /* 高速 */
+    gpio_init_struct.Alternate = GPIO_AF12_FMC;         /* 复用为FMC */
+    HAL_GPIO_Init(LCD_CS_GPIO_PORT, &gpio_init_struct); /* 初始化LCD_CS引脚 */
+
+    gpio_init_struct.Pin = LCD_WR_GPIO_PIN;
+    HAL_GPIO_Init(LCD_WR_GPIO_PORT, &gpio_init_struct); /* 初始化LCD_WR引脚 */
+
+    gpio_init_struct.Pin = LCD_RD_GPIO_PIN;
+    HAL_GPIO_Init(LCD_RD_GPIO_PORT, &gpio_init_struct); /* 初始化LCD_RD引脚 */
+
+    gpio_init_struct.Pin = LCD_RS_GPIO_PIN;
+    HAL_GPIO_Init(LCD_RS_GPIO_PORT, &gpio_init_struct); /* 初始化LCD_RS引脚 */
+
+    gpio_init_struct.Pin = LCD_BL_GPIO_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_OUTPUT_PP;        /* 推挽输出 */
+    HAL_GPIO_Init(LCD_BL_GPIO_PORT, &gpio_init_struct); /* LCD_BL引脚模式设置(推挽输出) */
+
+    gpio_init_struct.Pin = LCD_RST_GPIO_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_OUTPUT_PP;         /* 推挽输出 */
+    HAL_GPIO_Init(LCD_RST_GPIO_PORT, &gpio_init_struct); /* LCD_RST引脚模式设置(推挽输出) */
+
+    hsram.Instance = FMC_NORSRAM_DEVICE;
+    hsram.Extended = FMC_NORSRAM_EXTENDED_DEVICE;
+    hsram.Init.NSBank = FMC_NORSRAM_BANK1;                     /* 使用NE1 */
+    hsram.Init.DataAddressMux = FMC_DATA_ADDRESS_MUX_DISABLE;  /* 地址/数据线不复用 */
+    hsram.Init.MemoryType = FMC_MEMORY_TYPE_SRAM;              /* SRAM */
+    hsram.Init.MemoryDataWidth = FMC_NORSRAM_MEM_BUS_WIDTH_16; /* 16位数据宽度 */
+    hsram.Init.BurstAccessMode =
+        FMC_BURST_ACCESS_MODE_DISABLE; /* 是否使能突发访问,仅对同步突发存储器有效,此处未用到 */
+    hsram.Init.WaitSignalPolarity =
+        FMC_WAIT_SIGNAL_POLARITY_LOW; /* 等待信号的极性,仅在突发模式访问下有用 */
+    hsram.Init.WaitSignalActive =
+        FMC_WAIT_TIMING_BEFORE_WS; /* 存储器是在等待周期之前的一个时钟周期还是等待周期期间使能NWAIT
+                                    */
+    hsram.Init.WriteOperation = FMC_WRITE_OPERATION_ENABLE; /* 存储器写使能 */
+    hsram.Init.WaitSignal = FMC_WAIT_SIGNAL_DISABLE;        /* 等待使能位,此处未用到 */
+    hsram.Init.ExtendedMode = FMC_EXTENDED_MODE_ENABLE;     /* 读写使用不同的时序 */
+    hsram.Init.AsynchronousWait =
+        FMC_ASYNCHRONOUS_WAIT_DISABLE; /* 是否使能同步传输模式下的等待信号,此处未用到 */
+    hsram.Init.WriteBurst = FMC_WRITE_BURST_DISABLE; /* 禁止突发写 */
+    hsram.Init.ContinuousClock = FMC_CONTINUOUS_CLOCK_SYNC_ASYNC;
+    hsram.Init.WriteFifo = FMC_WRITE_FIFO_ENABLE;
+    hsram.Init.PageSize = FMC_PAGE_SIZE_NONE;
+
+    /* FMC读时序控制寄存器 */
+    fmc_read_handle.AddressSetupTime =
+        0x0F; /* 地址建立时间(ADDSET)为15个fmc_ker_ck 1/220M = 4.5ns * 15 = 67.5ns */
+    fmc_read_handle.AddressHoldTime = 0x01;
+    fmc_read_handle.DataSetupTime =
+        0x4E; /* 数据保存时间(DATAST)为78个fmc_ker_ck = 4.5 * 78 = 351ns */
+              /* 因为液晶驱动IC的读数据的时候，速度不能太快,尤其是个别奇葩芯片 */
+    fmc_read_handle.AccessMode = FMC_ACCESS_MODE_A; /* 模式A */
+    fmc_read_handle.CLKDivision = 2;
+    fmc_read_handle.DataLatency = 2;
+    /* FMC写时序控制寄存器 */
+    fmc_write_handle.AddressSetupTime = 0x0F; /* 地址建立时间(ADDSET)为15个fmc_ker_ck = 67.5ns */
+    fmc_write_handle.AddressHoldTime = 0x01;
+    fmc_write_handle.DataSetupTime = 0x0F; /* 数据保存时间(DATAST)为15个fmc_ker_ck = 67.5ns */
+    /* 15个fmc_ker_ck（fmc_ker_ck=220Mhz）,某些液晶驱动IC的写信号脉宽，最少也得50ns。 */
+    fmc_write_handle.AccessMode = FMC_ACCESS_MODE_A; /* 模式A */
+    HAL_SRAM_Init(&hsram, &fmc_read_handle, &fmc_write_handle);
+    delay_ms(50);
+
+    /* LCD复位 */
+    LCD_RST(1);
+    delay_ms(10);
+    LCD_RST(0);
+    delay_ms(50);
+    LCD_RST(1);
+    delay_ms(200);
+
+    /* 尝试7796 ID的读取 */
+    lcd_wr_regno(0XD3);
+    lcddev.id = lcd_rd_data(); /* dummy read */
+    lcddev.id = lcd_rd_data(); /* 读到0X00 */
+    lcddev.id = lcd_rd_data(); /* 读取0X77 */
+    lcddev.id <<= 8;
+    lcddev.id |= lcd_rd_data(); /* 读取0X96 */
+
+    if (lcddev.id != 0X7796) /* 不是7796,尝试看看是不是ST7789 */
+    {
+        lcd_wr_regno(0X04);
+        lcddev.id = lcd_rd_data(); /* dummy read */
+        lcddev.id = lcd_rd_data(); /* 读到0X85 */
+        lcddev.id = lcd_rd_data(); /* 读取0X85 */
+        lcddev.id <<= 8;
+        lcddev.id |= lcd_rd_data(); /* 读取0X52 */
+
+        if (lcddev.id == 0X8552) /* 将8552的ID转换成7789 */
+        {
+            lcddev.id = 0x7789;
+        }
+
+        if (lcddev.id != 0x7789) /* 也不是ST7789,尝试是不是NT35310 */
+        {
+            lcd_wr_regno(0XD4);
+            lcddev.id = lcd_rd_data(); /* dummy read */
+            lcddev.id = lcd_rd_data(); /* 读回0X01 */
+            lcddev.id = lcd_rd_data(); /* 读回0X53 */
+            lcddev.id <<= 8;
+            lcddev.id |= lcd_rd_data(); /* 这里读回0X10 */
+
+            if (lcddev.id != 0X5310) /* 也不是NT35310,尝试看看是不是NT35510 */
+            {
+                /* 发送秘钥（厂家提供,照搬即可） */
+                lcd_write_reg(0xF000, 0x0055);
+                lcd_write_reg(0xF001, 0x00AA);
+                lcd_write_reg(0xF002, 0x0052);
+                lcd_write_reg(0xF003, 0x0008);
+                lcd_write_reg(0xF004, 0x0001);
+
+                lcd_wr_regno(0xC500);      /* 读取ID高8位 */
+                lcddev.id = lcd_rd_data(); /* 读回0X55 */
+                lcddev.id <<= 8;
+
+                lcd_wr_regno(0xC501);       /* 读取ID低8位 */
+                lcddev.id |= lcd_rd_data(); /* 读回0X10 */
+            }
+        }
+    }
+
+    /* 特别注意, 如果在main函数里面屏蔽串口1初始化, 则会卡死在printf
+     * 里面(卡死在f_putc函数), 所以, 必须初始化串口1, 或者屏蔽掉下面
+     * 这行 printf 语句 !!!!!!!
+     */
+    // printf("LCD ID:%x\r\n", lcddev.id); /* 打印LCD ID */
+
+    if (lcddev.id == 0X7789) {
+        lcd_ex_st7789_reginit(); /* 执行ST7789初始化 */
+    } else if (lcddev.id == 0x5310) {
+        lcd_ex_nt35310_reginit(); /* 执行NT35310初始化 */
+    } else if (lcddev.id == 0x7796) {
+        lcd_ex_st7796_reginit(); /* 执行ST7796初始化 */
+    } else if (lcddev.id == 0x5510) {
+        lcd_ex_nt35510_reginit(); /* 执行NT35510初始化 */
+    }
+
+    /* 由于不同屏幕的写时序不同，这里的时序可以根据自己的屏幕进行修改
+      （若插上长排线对时序也会有影响，需要自己根据情况修改） */
+    /* 初始化完成以后,提速 */
+    if (lcddev.id == 0x7789) {
+        /* 重新配置写时序控制寄存器的时序 */
+        fmc_write_handle.AddressSetupTime = 5; /* 地址建立时间(ADDSET)为5个fmc_ker_ck = 22.5 ns */
+        fmc_write_handle.DataSetupTime = 5;    /* 数据保存时间(DATAST)为5个fmc_ker_ck = 22.5 ns */
+        FMC_NORSRAM_Extended_Timing_Init(
+            hsram.Extended, &fmc_write_handle, hsram.Init.NSBank, hsram.Init.ExtendedMode);
+    } else if (lcddev.id == 0x5310 || lcddev.id == 0x5510 || lcddev.id == 0x7796) {
+        /* 重新配置写时序控制寄存器的时序 */
+        fmc_write_handle.AddressSetupTime = 3; /* 地址建立时间(ADDSET)为3个fmc_ker_ck = 13.5 ns */
+        fmc_write_handle.DataSetupTime = 3;    /* 数据保存时间(DATAST)为3个fmc_ker_ck = 13.5 ns */
+        FMC_NORSRAM_Extended_Timing_Init(
+            hsram.Extended, &fmc_write_handle, hsram.Init.NSBank, hsram.Init.ExtendedMode);
+    }
+
+    lcd_display_dir(0); /* 默认为竖屏 */
+    LCD_BL(1);          /* 点亮背光 */
+}
+
+void HAL_SRAM_MspInit(SRAM_HandleTypeDef *hsram) {
+    GPIO_InitTypeDef gpio_init_struct;
+
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FMC;
+    PeriphClkInitStruct.FmcClockSelection = RCC_FMCCLKSOURCE_D1HCLK;
+    HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
+
+    __HAL_RCC_FMC_CLK_ENABLE();   /* 使能FMC时钟 */
+    __HAL_RCC_GPIOD_CLK_ENABLE(); /* 使能GPIOD时钟 */
+    __HAL_RCC_GPIOE_CLK_ENABLE(); /* 使能GPIOE时钟 */
+
+    /* 初始化PD0,1,8,9,10,14,15 */
+    gpio_init_struct.Pin =
+        GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_14 | GPIO_PIN_15;
+    gpio_init_struct.Mode = GPIO_MODE_AF_PP;       /* 复用推挽 */
+    gpio_init_struct.Pull = GPIO_PULLUP;           /* 上拉 */
+    gpio_init_struct.Speed = GPIO_SPEED_FREQ_HIGH; /* 高速 */
+    gpio_init_struct.Alternate = GPIO_AF12_FMC;    /* 复用为FMC */
+
+    HAL_GPIO_Init(GPIOD, &gpio_init_struct); /* 初始化IO口 */
+
+    /* 初始化PE7,8,9,10,11,12,13,14,15 */
+    gpio_init_struct.Pin = GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 |
+                           GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
+    HAL_GPIO_Init(GPIOE, &gpio_init_struct); /* 初始化IO口 */
+}
+
+/* 功能函数 */
+HAL_StatusTypeDef LCD_Clear(lcd_msg_t *msg) {
+    uint32_t index = 0;
+    uint32_t totalpoint = lcddev.width;
+
+    totalpoint *= lcddev.height;
+    lcd_set_cursor(0x00, 0x0000);
+    lcd_write_ram_prepare();
+
+    memcpy(lcd_dma_buffer, &(msg->color), sizeof(uint16_t));
+    LCD_Transmit_DMA(DMA_PINC_DISABLE, (uint32_t)lcd_dma_buffer, sizeof(uint16_t), totalpoint);
+}
+
+const lcd_func_t lcd_func_table[LCD_CMD_MAX] = {
+    [LCD_CMD_CLEAR] = LCD_Clear,
+};
+
+void LCD_Task_Process(void *arg) {
+    HAL_StatusTypeDef ret = HAL_OK;
+    fmc_msg_t fmc_msg;
+
+    lcd_mutex = osSemaphoreNew(1, 0, NULL);
+    assert_param(lcd_mutex != NULL);
+
+    LCD_MUTEX_RELEASE();
+
+    MX_LCD_Init();
+
+    while (1) {
+        osMessageQueueGet(fmc_queue, &fmc_msg, NULL, osWaitForever);
+        if (fmc_msg.cmd >= LCD_CMD_MAX) {
+            continue;
+        }
+
+        ret = lcd_func_table[fmc_msg.cmd](&(fmc_msg.u.lcd_msg));
+        assert_param(ret == HAL_OK);
+    }
+}
+
+#endif

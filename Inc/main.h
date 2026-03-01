@@ -63,6 +63,9 @@ extern "C" {
         .PLL3FRACN = 0,                                                                            \
     }
 
+#define uapi_min(a, b) ((a) < (b) ? (a) : (b))
+#define uapi_max(a, b) ((a) > (b) ? (a) : (b))
+
 void Error_Handler(void);
 
 #ifdef __cplusplus

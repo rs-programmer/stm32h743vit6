@@ -43,6 +43,7 @@ set(PUBLIB_LIB_DIRS
     ${LIB_DIRS}/bsp
     ${LIB_DIRS}/freertos
     ${LIB_DIRS}/fatfs
+    ${LIB_DIRS}/fmc
 )
 
 set(PUBLIB_LIBS
@@ -50,6 +51,7 @@ set(PUBLIB_LIBS
     "bsp"
     "freertos"
     "fatfs"
+    "fmc"
 )
 
 set(PRIVATE_LIB_DIRS
@@ -62,6 +64,7 @@ add_subdirectory(cmake/stm32cubemx)
 add_subdirectory(cmake/bsp)
 add_subdirectory(cmake/freertos)
 add_subdirectory(cmake/fatfs)
+add_subdirectory(cmake/fmc)
 
 add_executable(${NAME} ${SOURCE})
 

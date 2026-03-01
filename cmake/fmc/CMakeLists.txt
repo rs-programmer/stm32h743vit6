@@ -2,32 +2,25 @@ cmake_minimum_required(VERSION 3.22)
 
 enable_language(C ASM)
 
-set(NAME bsp)
+set(NAME fmc)
 
 set(DEFINE
 )
 
 set(PUBLIC_HEADER
-    ${CMAKE_SOURCE_DIR}/BSP/Inc
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FMC
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FMC/LCD
 )
 
 set(PRIVATE_HEADER
 )
 
 set(SOURCE
-    ${CMAKE_SOURCE_DIR}/BSP/delay.c
-    ${CMAKE_SOURCE_DIR}/BSP/exti.c
-    ${CMAKE_SOURCE_DIR}/BSP/gpio.c
-    ${CMAKE_SOURCE_DIR}/BSP/iic.c
-    ${CMAKE_SOURCE_DIR}/BSP/rng.c
-    ${CMAKE_SOURCE_DIR}/BSP/rtc.c
-    ${CMAKE_SOURCE_DIR}/BSP/spi.c
-    ${CMAKE_SOURCE_DIR}/BSP/systick.c
-    ${CMAKE_SOURCE_DIR}/BSP/uart.c
-    ${CMAKE_SOURCE_DIR}/BSP/watchdog.c
-    ${CMAKE_SOURCE_DIR}/BSP/tim.c
-    ${CMAKE_SOURCE_DIR}/BSP/adc.c
-    ${CMAKE_SOURCE_DIR}/BSP/sd.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FMC/fmc.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FMC/LCD/lcd.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FMC/LCD/lcd_dma.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FMC/LCD/lcd_dma2d.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FMC/LCD/lcd_mdma.c
 )
 
 set(PUBLIB_LIB_DIRS
@@ -38,10 +31,14 @@ set(PUBLIB_LIBS
 
 set(PRIVATE_LIB_DIRS
     ${LIB_DIRS}/stm32cubemx
+    ${LIB_DIRS}/bsp
+    ${LIB_DIRS}/freertos
 )
 
 set(PRIVATE_LIBS
     "drivers"
+    "bsp"
+    "freertos"
 )
 
 add_library(${NAME} STATIC ${SOURCE})
