@@ -34,74 +34,59 @@ osThreadId_t firstTaskHandle;
 osThreadId_t testTaskHandle;
 
 void first_task_func(void *argument) {
-    FRESULT ret;
+    FRESULT ret = FR_OK;
     DIR dir;
     uint8_t mkfs_retry = 3;
     uint8_t *work_buf = NULL;
 
-    //     ret = f_mount(&SDFatFS, SDPath, 1);
-    //     uart_debug("f_mount initial res: %d\n", ret);
-    //     if (ret != FR_OK) {
-    //         uart_debug("f_mount initial failed! err: %d\n", ret);
-    //         goto MOUNT_FAILED;
-    //     }
+    ret = f_mount(&SDFatFS, SDPath, 1);
 
-    //     ret = f_opendir(&dir, SDPath);
-    //     if (ret == FR_OK) {
-    //         f_closedir(&dir);
-    //         uart_debug("File system is valid!\n");
-    //     } else if (ret == FR_NO_FILESYSTEM) {
-    //         uart_debug("No valid file system, start mkfs...\n");
-    //         while (mkfs_retry--) {
-    //             work_buf = ff_malloc(_MAX_SS);
-    //             if (work_buf == NULL) {
-    //                 uart_debug("mkfs malloc work buf failed! retry: %d\n", mkfs_retry);
-    //                 continue;
-    //             }
-    //             ret = f_mkfs(SDPath, FM_FAT32, 0, work_buf, _MAX_SS);
-    //             ff_free(work_buf);
-    //             work_buf = NULL;
+    if (ret == FR_NO_FILESYSTEM) {
+        uart_debug("No valid file system, start mkfs...\n");
 
-    //             if (ret == FR_OK) {
-    //                 uart_debug("mkfs success! retry: %d\n", 3 - mkfs_retry - 1);
-    //                 f_mount(NULL, SDPath, 1);
-    //                 ret = f_mount(&SDFatFS, SDPath, 1);
-    //                 if (ret == FR_OK) {
-    //                     uart_debug("f_mount after mkfs success!\n");
-    //                     ret = f_opendir(&dir, SDPath);
-    //                     if (ret == FR_OK) {
-    //                         f_closedir(&dir);
-    //                         goto MOUNT_SUCCESS;
-    //                     }
-    //                 }
-    //             } else {
-    //                 uart_debug("mkfs failed! err: %d, retry: %d\n", ret, mkfs_retry);
-    //             }
-    //         }
-    //         uart_debug("mkfs all retry failed! final err: %d\n", ret);
-    //         goto MOUNT_FAILED;
-    //     } else {
-    //         uart_debug("Check file system failed! err: %d\n", ret);
-    //         goto MOUNT_FAILED;
-    //     }
+        while (mkfs_retry--) {
+            work_buf = ff_malloc(_MAX_SS);
+            if (work_buf == NULL) {
+                uart_debug("mkfs malloc work buf failed! retry: %d\n", mkfs_retry);
+                continue;
+            }
+            ret = f_mkfs(SDPath, FM_ANY, 0, work_buf, _MAX_SS);
+            ff_free(work_buf);
+            work_buf = NULL;
 
-    // MOUNT_SUCCESS:
-    //     FIL file;
-    //     const char *write_str = "你好，我是nice⭐sss\n";
-    //     ret = f_open(&file, "0:/test.txt", FA_WRITE | FA_CREATE_ALWAYS);
-    //     if (ret == FR_OK) {
-    //         f_write(&file, write_str, strlen(write_str), NULL);
-    //         f_close(&file);
-    //         uart_debug("Write file test.txt success!\n");
-    //     } else {
-    //         uart_debug("f_open failed! err: %d\n", ret);
-    //     }
+            if (ret == FR_OK) {
+                uart_debug("mkfs success! retry: %d\n", 3 - mkfs_retry - 1);
+                f_mount(NULL, SDPath, 1);
+                osDelay(pdMS_TO_TICKS(100));
+                ret = f_mount(&SDFatFS, SDPath, 1);
+                if (ret == FR_OK) {
+                    uart_debug("f_mount after mkfs success!\n");
+                }
+            } else {
+                uart_debug("mkfs failed! err: %d, retry: %d\n", ret, mkfs_retry);
+            }
+        }
+        uart_debug("mkfs all retry failed! final err: %d\n", ret);
+        goto MOUNT_FAILED;
+    }
+
+MOUNT_SUCCESS:
+    FIL file;
+    const char *write_str = "你好，我是nice⭐测试文件\n";
+    ret = f_open(&file, "0:/test.txt", FA_WRITE | FA_CREATE_ALWAYS);
+    if (ret == FR_OK) {
+        f_write(&file, write_str, strlen(write_str), NULL);
+        f_close(&file);
+        uart_debug("Write file test.txt success!\n");
+    } else {
+        uart_debug("f_open failed! err: %d\n", ret);
+    }
 
 MOUNT_FAILED:
     while (1) {
         uart_debug("first_task_func\n");
         LED1_TOGGLE();
-        osDelay(pdMS_TO_TICKS(500));
+        osDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -111,22 +96,12 @@ void test_task_func(void *argument) {
     fmc_msg_t msg = {0};
     msg.cmd = LCD_CMD_CLEAR;
 
-    osThreadAttr_t first_attr = {0};
-    first_attr.name = "first_task";
-    first_attr.priority = osPriorityNormal;
-    first_attr.stack_size = 4096;
-    firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
-
     while (1) {
         uart_debug("test_task_func\n");
         cnt += 100;
         msg.u.lcd_msg.color = cnt;
         MX_FMC_SendMsg(&msg);
         osDelay(pdMS_TO_TICKS(1000));
-
-        if (cnt >= 500) {
-            osThreadTerminate(firstTaskHandle);
-        }
     }
 }
 
@@ -171,7 +146,7 @@ int main(void) {
     MX_SPI1_Init(SPI_MODE_MASTER);
     MX_ADC1_Init();
     MX_TIM15_Init();
-    MX_SD_Init();
+    // MX_SD_Init();
 
     // num = HAL_RTCEx_BKUPRead(&hrtc1, RTC_BKP_DR0);
     // if (num != RTC_BACKUP0_LOAD) {
@@ -186,10 +161,10 @@ int main(void) {
     MX_FATFS_Init();
     MX_FMC_Init();
 
-    // osThreadAttr_t first_attr = {0};
-    // first_attr.name = "first_task";
-    // first_attr.priority = osPriorityNormal;
-    // first_attr.stack_size = 4096;
+    osThreadAttr_t first_attr = {0};
+    first_attr.name = "first_task";
+    first_attr.priority = osPriorityNormal;
+    first_attr.stack_size = 4096;
     // firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
 
     osThreadAttr_t test_attr = {0};

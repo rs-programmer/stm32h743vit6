@@ -25,7 +25,6 @@
 /* USER CODE END firstSection*/
 
 /* Includes ------------------------------------------------------------------*/
-#include "bsp_driver_sd.h"
 #include "ff_gen_drv.h"
 #include "sd_diskio.h"
 
@@ -76,7 +75,7 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
  * Notice: This is applicable only for cortex M7 based platform.
  */
 /* USER CODE BEGIN enableSDDmaCacheMaintenance */
-/* #define ENABLE_SD_DMA_CACHE_MAINTENANCE  1 */
+#define ENABLE_SD_DMA_CACHE_MAINTENANCE  1
 /* USER CODE END enableSDDmaCacheMaintenance */
 
 /*
@@ -85,13 +84,14 @@ See BSP_SD_ErrorCallback() and BSP_SD_AbortCallback() below
 * transfer data
 */
 /* USER CODE BEGIN enableScratchBuffer */
-/* #define ENABLE_SCRATCH_BUFFER */
+#define ENABLE_SCRATCH_BUFFER
 /* USER CODE END enableScratchBuffer */
 
 /* Private variables ---------------------------------------------------------*/
 #if defined(ENABLE_SCRATCH_BUFFER)
 #if defined (ENABLE_SD_DMA_CACHE_MAINTENANCE)
-ALIGN_32BYTES(static uint8_t scratch[BLOCKSIZE]); // 32-Byte aligned for cache maintenance
+// ALIGN_32BYTES(static uint8_t scratch[BLOCKSIZE]); // 32-Byte aligned for cache maintenance
+__RAM_DMA static uint8_t scratch[BLOCKSIZE];
 #else
 __ALIGN_BEGIN static uint8_t scratch[BLOCKSIZE] __ALIGN_END;
 #endif
@@ -276,7 +276,7 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
   {
 #endif
     /* Fast path cause destination buffer is correctly aligned */
-    ret = BSP_SD_ReadBlocks_IT((uint32_t*)buff, (uint32_t)(sector), count);
+    ret = BSP_SD_ReadBlocks_DMA((uint32_t*)buff, (uint32_t)(sector), count);
 
     if (ret == MSD_OK) {
 #if (osCMSIS < 0x20000U)
@@ -448,7 +448,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
   SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, count*BLOCKSIZE + ((uint32_t)buff - alignedAddr));
 #endif
 
-  if(BSP_SD_WriteBlocks_IT((uint32_t*)buff,
+  if(BSP_SD_WriteBlocks_DMA((uint32_t*)buff,
                            (uint32_t) (sector),
                            count) == MSD_OK)
   {

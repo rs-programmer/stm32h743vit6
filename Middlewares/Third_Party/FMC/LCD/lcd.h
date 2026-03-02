@@ -199,26 +199,26 @@ typedef struct {
     uint32_t param; /* 其他参数 */
 } lcd_msg_t;
 
-// void lcd_wr_data(volatile uint16_t data);          /* LCD写数据 */
-// void lcd_wr_regno(volatile uint16_t regno);        /* LCD写寄存器编号/地址 */
-// void lcd_write_reg(uint16_t regno, uint16_t data); /* LCD写寄存器的值 */
+// void LCD_WriteData(volatile uint16_t data);          /* LCD写数据 */
+// void LCD_WriteReg(volatile uint16_t regno);        /* LCD写寄存器编号/地址 */
+// void LCD_Write(uint16_t regno, uint16_t data); /* LCD写寄存器的值 */
 
 // void lcd_init(void);               /* 初始化LCD */
-// void lcd_display_on(void);         /* 开显示 */
-// void lcd_display_off(void);        /* 关显示 */
-// void lcd_scan_dir(uint8_t dir);    /* 设置屏幕扫描方向 */
-// void lcd_display_dir(uint8_t dir); /* 设置屏幕显示方向 */
+// void LCD_DisplayOn(void);         /* 开显示 */
+// void LCD_DisplayOff(void);        /* 关显示 */
+// void LCD_ScanDir(uint8_t dir);    /* 设置屏幕扫描方向 */
+// void LCD_DisplayDir(uint8_t dir); /* 设置屏幕显示方向 */
 
-// void lcd_write_ram_prepare(void);                            /* 准备写GRAM */
-// void lcd_set_cursor(uint16_t x, uint16_t y);                 /* 设置光标 */
-// uint32_t lcd_read_point(uint16_t x, uint16_t y);             /* 读点 */
-// void lcd_draw_point(uint16_t x, uint16_t y, uint32_t color); /* 画点 */
+// void LCD_WritePrepare(void);                            /* 准备写GRAM */
+// void LCD_SetCursor(uint16_t x, uint16_t y);                 /* 设置光标 */
+// uint32_t LCD_ReadPoint(uint16_t x, uint16_t y);             /* 读点 */
+// void LCD_DrawPoint(uint16_t x, uint16_t y, uint32_t color); /* 画点 */
 
 // void lcd_clear(uint16_t color);                                                 /* LCD清屏 */
 // void lcd_fill_circle(uint16_t x, uint16_t y, uint16_t r, uint16_t color);       /* 填充实心圆 */
 // void lcd_draw_circle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color);      /* 画圆 */
 // void lcd_draw_hline(uint16_t x, uint16_t y, uint16_t len, uint16_t color);      /* 画水平线 */
-// void lcd_set_window(uint16_t sx, uint16_t sy, uint16_t width, uint16_t height); /* 设置窗口 */
+// void LCD_SetWindow(uint16_t sx, uint16_t sy, uint16_t width, uint16_t height); /* 设置窗口 */
 // void lcd_fill(
 //     uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint32_t color); /* 纯色填充矩形 */
 // void lcd_color_fill(
