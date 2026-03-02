@@ -74,27 +74,27 @@ HAL_StatusTypeDef MX_SD_Init(void) {
 
 void SDMMC1_IRQHandler(void) { HAL_SD_IRQHandler(&hsd1); }
 
-#if 0
-void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd) {
-    /* IT / IDMA 传输完成 */
-    if (hsd->Instance == SDMMC1) {
-        hsd1_tx_complete = true;
-    }
-}
+#if 1
+// void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd) {
+//     /* IT / IDMA 传输完成 */
+//     if (hsd->Instance == SDMMC1) {
+//         hsd1_tx_complete = true;
+//     }
+// }
 
-void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd) {
-    /* IT / IDMA 传输完成 */
-    if (hsd->Instance == SDMMC1) {
-        hsd1_rx_complate = true;
-    }
-}
+// void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd) {
+//     /* IT / IDMA 传输完成 */
+//     if (hsd->Instance == SDMMC1) {
+//         hsd1_rx_complate = true;
+//     }
+// }
 
-void HAL_SDEx_Read_DMADoubleBuf0CpltCallback(SD_HandleTypeDef *hsd) {}
-void HAL_SDEx_Read_DMADoubleBuf1CpltCallback(SD_HandleTypeDef *hsd) {}
+// void HAL_SDEx_Read_DMADoubleBuf0CpltCallback(SD_HandleTypeDef *hsd) {}
+// void HAL_SDEx_Read_DMADoubleBuf1CpltCallback(SD_HandleTypeDef *hsd) {}
 
-void HAL_SDEx_Write_DMADoubleBuf0CpltCallback(SD_HandleTypeDef *hsd) {}
+// void HAL_SDEx_Write_DMADoubleBuf0CpltCallback(SD_HandleTypeDef *hsd) {}
 
-void HAL_SDEx_Write_DMADoubleBuf1CpltCallback(SD_HandleTypeDef *hsd) {}
+// void HAL_SDEx_Write_DMADoubleBuf1CpltCallback(SD_HandleTypeDef *hsd) {}
 
 void MX_SD_Test(void) {
     HAL_StatusTypeDef ret = HAL_OK;
@@ -128,9 +128,9 @@ void MX_SD_Test(void) {
 
     /* 检测SD卡就绪 */
     // SD_WAIT_TRANSFER();
-    while (!hsd1_tx_complete) {
-        HAL_Delay(100);
-    }
+    // while (!hsd1_tx_complete) {
+    HAL_Delay(1000);
+    // }
 
     // ret = HAL_SD_ReadBlocks(&hsd1, hsd1_buffer1, 0, SD_BLOCK_COUNT, HAL_MAX_DELAY);
     // ret = HAL_SD_ReadBlocks_IT(&hsd1, hsd1_buffer1, 0, SD_BLOCK_COUNT);
@@ -141,9 +141,9 @@ void MX_SD_Test(void) {
         Error_Handler();
     }
 
-    while (!hsd1_rx_complate) {
-        HAL_Delay(100);
-    }
+    // while (!hsd1_rx_complate) {
+    HAL_Delay(1000);
+    // }
 
     SCB_InvalidateDCache_by_Addr(hsd1_buffer0, SD_BUFFER_SIZE);
     SCB_InvalidateDCache_by_Addr(hsd1_buffer1, SD_BUFFER_SIZE);

@@ -498,12 +498,19 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
     /*
      * invalidate the scratch buffer before the next write to get the actual data instead of the cached one
      */
-     SCB_InvalidateDCache_by_Addr((uint32_t*)scratch, BLOCKSIZE);
+    //  SCB_InvalidateDCache_by_Addr((uint32_t*)scratch, BLOCKSIZE);
 #endif
       for (i = 0; i < count; i++)
       {
         memcpy((void *)scratch, buff, BLOCKSIZE);
         buff += BLOCKSIZE;
+
+#if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
+    /*
+     * invalidate the scratch buffer before the next write to get the actual data instead of the cached one
+     */
+     SCB_CleanDCache_by_Addr((uint32_t*)scratch, BLOCKSIZE);
+#endif
 
         ret = BSP_SD_WriteBlocks_DMA((uint32_t*)scratch, (uint32_t)sector++, 1);
         if (ret == MSD_OK )

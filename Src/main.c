@@ -25,6 +25,8 @@
 
 #define RTC_BACKUP0_LOAD 0x58585858
 
+#define FATFS_MKFS_WORKSIZE (_MAX_SS)
+
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MPU_Initialize(void);
@@ -45,12 +47,12 @@ void first_task_func(void *argument) {
         uart_debug("No valid file system, start mkfs...\n");
 
         while (mkfs_retry--) {
-            work_buf = ff_malloc(_MAX_SS);
+            work_buf = ff_malloc(FATFS_MKFS_WORKSIZE);
             if (work_buf == NULL) {
                 uart_debug("mkfs malloc work buf failed! retry: %d\n", mkfs_retry);
                 continue;
             }
-            ret = f_mkfs(SDPath, FM_ANY, 0, work_buf, _MAX_SS);
+            ret = f_mkfs(SDPath, FM_ANY, 0, work_buf, FATFS_MKFS_WORKSIZE);
             ff_free(work_buf);
             work_buf = NULL;
 
@@ -61,6 +63,7 @@ void first_task_func(void *argument) {
                 ret = f_mount(&SDFatFS, SDPath, 1);
                 if (ret == FR_OK) {
                     uart_debug("f_mount after mkfs success!\n");
+                    goto MOUNT_SUCCESS;
                 }
             } else {
                 uart_debug("mkfs failed! err: %d, retry: %d\n", ret, mkfs_retry);
@@ -146,7 +149,9 @@ int main(void) {
     MX_SPI1_Init(SPI_MODE_MASTER);
     MX_ADC1_Init();
     MX_TIM15_Init();
-    // MX_SD_Init();
+    MX_SD_Init();
+
+    // MX_SD_Test();
 
     // num = HAL_RTCEx_BKUPRead(&hrtc1, RTC_BKP_DR0);
     // if (num != RTC_BACKUP0_LOAD) {
