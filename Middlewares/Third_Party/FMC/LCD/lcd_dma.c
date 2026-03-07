@@ -15,8 +15,8 @@
 #define LCD_DMA_BUFFER_SIZE 1024
 #define LCD_DMA_TRANSFER_SIZE 0xFFFF
 
-#define LCD_MUTEX_ACQUIRE() osSemaphoreAcquire(lcd_mutex, osWaitForever)
-#define LCD_MUTEX_RELEASE() osSemaphoreRelease(lcd_mutex)
+#define LCD_SEMAPHORE_ACQUIRE() osSemaphoreAcquire(lcd_mutex, osWaitForever)
+#define LCD_SEMAPHORE_RELEASE() osSemaphoreRelease(lcd_mutex)
 
 typedef HAL_StatusTypeDef (*lcd_func_t)(lcd_msg_t *msg);
 
@@ -27,7 +27,7 @@ _lcd_dev lcddev;
 
 osSemaphoreId_t lcd_mutex = NULL;
 
-__RAM_DMA uint8_t lcd_dma_buffer[LCD_DMA_BUFFER_SIZE];
+__RAM_DMA uint16_t lcd_dma_buffer[LCD_DMA_BUFFER_SIZE];
 
 void LCD_WriteData(volatile uint16_t data) {
     data = data;
@@ -374,7 +374,7 @@ void LCD_DMATransmitCplt(DMA_HandleTypeDef *hdma) {
     /* Disable the MDMA channel */
     __HAL_DMA_DISABLE(hdma);
 
-    LCD_MUTEX_RELEASE();
+    LCD_SEMAPHORE_RELEASE();
 }
 
 /**
@@ -442,7 +442,7 @@ HAL_StatusTypeDef LCD_Transmit_DMA(uint32_t src_inc, uint32_t src, uint32_t len,
         ret = HAL_DMA_Start_IT(&hsram_dma, src, LCD_RAM_ADDR, trans_size);
         assert_param(ret == HAL_OK);
         total_size -= trans_size;
-        LCD_MUTEX_ACQUIRE();
+        LCD_SEMAPHORE_ACQUIRE();
     }
 
     return ret;
@@ -738,7 +738,7 @@ void LCD_Task_Process(void *arg) {
     lcd_mutex = osSemaphoreNew(1, 0, NULL);
     assert_param(lcd_mutex != NULL);
 
-    LCD_MUTEX_RELEASE();
+    LCD_SEMAPHORE_RELEASE();
 
     MX_LCD_Init();
 

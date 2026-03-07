@@ -10,8 +10,8 @@
 #endif
 
 #define FMC_LCD_MODE_CPU 0
-#define FMC_LCD_MODE_DMA 1
-#define FMC_LCD_MODE_MDMA 0
+#define FMC_LCD_MODE_DMA 0
+#define FMC_LCD_MODE_MDMA 1
 #define FMC_LCD_MODE_DMA2D 0
 
 #endif /* __FMC_CONF_H__ */
