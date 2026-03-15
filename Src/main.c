@@ -18,6 +18,7 @@
 #include "systick.h"
 #include "tim.h"
 #include "uart.h"
+#include "usbd_cdc_if.h"
 #include "watchdog.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -99,11 +100,21 @@ void test_task_func(void *argument) {
     fmc_msg_t msg = {0};
     msg.cmd = LCD_CMD_CLEAR;
 
+    MX_USB_DEVICE_Init();
+
     while (1) {
         uart_debug("test_task_func\n");
-        cnt += 100;
-        msg.u.lcd_msg.color = cnt;
-        MX_FMC_SendMsg(&msg);
+        // cnt += 100;
+        // msg.u.lcd_msg.color = cnt;
+        // MX_FMC_SendMsg(&msg);
+
+        for (uint32_t i = 0; i < 100; i++) {
+            UserTxBufferFS[i] = i;
+        }
+
+        // MX_USBD_CDC_Receive(UserRxBufferFS, 100, osWaitForever);
+        MX_USBD_CDC_Transmit(UserTxBufferFS, 100, osWaitForever);
+
         osDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -150,7 +161,6 @@ int main(void) {
     MX_ADC1_Init();
     MX_TIM15_Init();
     MX_SD_Init();
-    MX_USB_DEVICE_Init();
 
     // MX_SD_Test();
 
@@ -171,18 +181,24 @@ int main(void) {
     first_attr.name = "first_task";
     first_attr.priority = osPriorityNormal;
     first_attr.stack_size = 4096;
-    // firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
+    firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
 
     osThreadAttr_t test_attr = {0};
     test_attr.name = "test_task";
     test_attr.stack_size = 4096;
     test_attr.priority = osPriorityNormal;
-    // testTaskHandle = osThreadNew(test_task_func, NULL, &test_attr);
+    testTaskHandle = osThreadNew(test_task_func, NULL, &test_attr);
 
-    // osKernelStart();
+    osKernelStart();
 
     while (1) {
         // uart_debug("test code\n");
+        for (uint32_t i = 0; i < APP_TX_DATA_SIZE; i++) {
+            UserTxBufferFS[i] = i;
+        }
+
+        MX_USBD_CDC_Receive(UserRxBufferFS, 100, 0);
+
         LED1_TOGGLE();
         HAL_Delay(500);
     }
@@ -410,6 +426,9 @@ void Error_Handler(void) {
 #ifdef USE_FULL_ASSERT
 
 void assert_failed(uint8_t *file, uint32_t line) {
-    uart_debug("Wrong file %s on line %u\n", file, line);
+    while (1) {
+        HAL_Delay(1000);
+        uart_debug("Wrong file %s on line %u\n", file, line);
+    };
 }
 #endif

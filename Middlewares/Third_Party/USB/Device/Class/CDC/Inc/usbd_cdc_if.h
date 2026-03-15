@@ -29,6 +29,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc.h"
+#include "cmsis_os2.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -52,6 +53,13 @@ extern "C" {
 #define APP_RX_DATA_SIZE 512
 #define APP_TX_DATA_SIZE 512
 /* USER CODE BEGIN EXPORTED_DEFINES */
+extern __RAM_DMA uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
+
+/** Data to send over USB CDC are stored in this buffer   */
+extern __RAM_DMA uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
+
+extern osSemaphoreId_t Semaphore_TransmitCplt;
+extern osSemaphoreId_t Semaphore_ReceiveCplt;
 
 /* USER CODE END EXPORTED_DEFINES */
 
@@ -109,6 +117,8 @@ extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 uint8_t CDC_Transmit_FS(uint8_t *Buf, uint16_t Len);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
+HAL_StatusTypeDef MX_USBD_CDC_Transmit(uint8_t *Buf, uint16_t Len, uint32_t Timeout);
+HAL_StatusTypeDef MX_USBD_CDC_Receive(uint8_t *Buf, uint16_t Len, uint32_t Timeout);
 
 /* USER CODE END EXPORTED_FUNCTIONS */
 

@@ -61,6 +61,7 @@ EndBSPDependencies */
 #include "usbd_cdc.h"
 #include "stm32h743xx.h"
 #include "usbd_ctlreq.h"
+#include "usbd_cdc_if.h"
 
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
  * @{
@@ -220,13 +221,13 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_CfgDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_E
     0x01, /* bSlaveInterface0: Data Class Interface */
 
     /* Endpoint 2 Descriptor */
-    // 0x07,                        /* bLength: Endpoint Descriptor size */
-    // USB_DESC_TYPE_ENDPOINT,      /* bDescriptorType: Endpoint */
-    // CDC_CMD_EP,                  /* bEndpointAddress */
-    // 0x03,                        /* bmAttributes: Interrupt */
-    // LOBYTE(CDC_CMD_PACKET_SIZE), /* wMaxPacketSize */
-    // HIBYTE(CDC_CMD_PACKET_SIZE),
-    // CDC_FS_BINTERVAL, /* bInterval */
+    0x07,                        /* bLength: Endpoint Descriptor size */
+    USB_DESC_TYPE_ENDPOINT,      /* bDescriptorType: Endpoint */
+    CDC_CMD_EP,                  /* bEndpointAddress */
+    0x03,                        /* bmAttributes: Interrupt */
+    LOBYTE(CDC_CMD_PACKET_SIZE), /* wMaxPacketSize */
+    HIBYTE(CDC_CMD_PACKET_SIZE),
+    CDC_FS_BINTERVAL, /* bInterval */
     /*---------------------------------------------------------------------------*/
 
     /* Data class interface descriptor */
@@ -353,8 +354,8 @@ static uint8_t USBD_CDC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
             pdev, CDCOutEpAdd, hcdc->RxBuffer, CDC_DATA_HS_OUT_PACKET_SIZE);
     } else {
         /* Prepare Out endpoint to receive next packet */
-        (void)USBD_LL_PrepareReceive(
-            pdev, CDCOutEpAdd, hcdc->RxBuffer, CDC_DATA_FS_OUT_PACKET_SIZE);
+        // (void)USBD_LL_PrepareReceive(
+        //     pdev, CDCOutEpAdd, hcdc->RxBuffer, CDC_DATA_FS_OUT_PACKET_SIZE);
     }
 
     return (uint8_t)USBD_OK;
@@ -790,7 +791,7 @@ uint8_t USBD_CDC_ReceivePacket(USBD_HandleTypeDef *pdev) {
     } else {
         /* Prepare Out endpoint to receive next packet */
         (void)USBD_LL_PrepareReceive(
-            pdev, CDCOutEpAdd, hcdc->RxBuffer, CDC_DATA_FS_OUT_PACKET_SIZE);
+            pdev, CDCOutEpAdd, hcdc->RxBuffer, hcdc->RxLength);
     }
 
     return (uint8_t)USBD_OK;

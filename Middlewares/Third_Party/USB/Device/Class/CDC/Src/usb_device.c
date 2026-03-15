@@ -65,6 +65,10 @@ void MX_USB_DEVICE_Init(void) {
     /* USER CODE BEGIN USB_DEVICE_Init_PreTreatment */
 
     /* USER CODE END USB_DEVICE_Init_PreTreatment */
+    Semaphore_TransmitCplt = osSemaphoreNew(1, 0, NULL);
+    Semaphore_ReceiveCplt = osSemaphoreNew(1, 0, NULL);
+    assert_param(Semaphore_TransmitCplt != NULL);
+    assert_param(Semaphore_ReceiveCplt != NULL);
 
     /* Init Device Library, add supported class and start the library. */
     if (USBD_Init(&hUsbDeviceFS, &FS_Desc, DEVICE_FS) != USBD_OK) {

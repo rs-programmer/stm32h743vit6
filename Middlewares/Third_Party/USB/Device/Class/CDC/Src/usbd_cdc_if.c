@@ -20,6 +20,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
+#include "cmsis_os2.h"
+#include "stm32h743xx.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -74,6 +76,8 @@
  */
 
 /* USER CODE BEGIN PRIVATE_MACRO */
+#define USBD_TX_MAX_BYTES (10 * 1024)
+#define USBD_RX_MAX_BYTES (10 * 1024)
 
 /* USER CODE END PRIVATE_MACRO */
 
@@ -128,6 +132,12 @@ static int8_t CDC_Receive_FS(uint8_t *pbuf, uint32_t *Len);
 static int8_t CDC_TransmitCplt_FS(uint8_t *pbuf, uint32_t *Len, uint8_t epnum);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
+osSemaphoreId_t Semaphore_TransmitCplt;
+osSemaphoreId_t Semaphore_ReceiveCplt;
+uint32_t UserRxLength = 0;
+uint32_t UserRxTotalLength = 0;
+uint32_t UserTxLength = 0;
+uint32_t UserTxTotalLength = 0;
 
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
@@ -163,6 +173,15 @@ static int8_t CDC_Init_FS(void) {
  */
 static int8_t CDC_DeInit_FS(void) {
     /* USER CODE BEGIN 4 */
+    if (Semaphore_TransmitCplt != NULL) {
+        osSemaphoreDelete(Semaphore_TransmitCplt);
+        Semaphore_TransmitCplt = NULL;
+    }
+
+    if (Semaphore_ReceiveCplt != NULL) {
+        osSemaphoreDelete(Semaphore_ReceiveCplt);
+        Semaphore_ReceiveCplt = NULL;
+    }
     return (USBD_OK);
     /* USER CODE END 4 */
 }
@@ -255,18 +274,27 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t *pbuf, uint16_t length) {
  */
 static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len) {
     /* USER CODE BEGIN 6 */
-    USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
-    USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
 
-    /* 原路返回 */
-    SCB_InvalidateDCache_by_Addr((uint32_t *)Buf, *Len);
-    memcpy(UserTxBufferFS, Buf, *Len);
-    SCB_CleanInvalidateDCache_by_Addr((uint32_t *)UserTxBufferFS, *Len);
+    if (UserRxTotalLength >= *Len) {
+        UserRxTotalLength -= *Len;
+    } else {
+        UserRxTotalLength = 0;
+    }
 
-    USBD_HandleTypeDef *pdev = &hUsbDeviceFS;
-    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)pdev->pClassDataCmsit[pdev->classId];
-    hcdc->TxLength = *Len;
-    USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+    UserRxLength += *Len;
+
+    if (UserRxTotalLength > 0) {
+        hcdc->RxState = 1;
+        uint8_t *temp_buf = (uint32_t)hcdc->RxBuffer + UserRxLength;
+        uint32_t temp_len = MIN(UserRxTotalLength, USBD_RX_MAX_BYTES);
+        hcdc->RxLength = temp_len;
+        USBD_CDC_SetRxBuffer(&hUsbDeviceFS, temp_buf);
+        USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+    } else {
+        osSemaphoreRelease(Semaphore_ReceiveCplt);
+        hcdc->RxState = 0;
+    }
 
     return (USBD_OK);
     /* USER CODE END 6 */
@@ -310,16 +338,89 @@ uint8_t CDC_Transmit_FS(uint8_t *Buf, uint16_t Len) {
  */
 static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum) {
     uint8_t result = USBD_OK;
-    /* USER CODE BEGIN 13 */
-    UNUSED(Buf);
-    UNUSED(Len);
-    UNUSED(epnum);
-    /* USER CODE END 13 */
+    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
+
+    if (UserTxTotalLength >= *Len) {
+        UserTxTotalLength -= *Len;
+    } else {
+        UserTxTotalLength = 0;
+    }
+
+    UserTxLength += *Len;
+    if (UserTxTotalLength > 0) {
+        hcdc->TxState = 1;
+        uint8_t *temp_buf = (uint32_t)hcdc->TxBuffer + UserTxLength;
+        uint32_t temp_len = MIN(UserTxTotalLength, USBD_TX_MAX_BYTES);
+        USBD_CDC_SetTxBuffer(&hUsbDeviceFS, temp_buf, temp_len);
+        result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+    } else {
+        hcdc->TxState = 0;
+        osSemaphoreRelease(Semaphore_TransmitCplt);
+    }
+
     return result;
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+HAL_StatusTypeDef MX_USBD_CDC_Transmit(uint8_t *Buf, uint16_t Len, uint32_t Timeout) {
+    HAL_StatusTypeDef ret = HAL_OK;
 
+    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
+    if ((Len == 0) || (hcdc->TxState != 0) || (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED)) {
+        return USBD_BUSY;
+    }
+
+    if (Buf == NULL) {
+        Buf = UserTxBufferFS;
+    }
+
+    UserTxLength = 0;
+    UserTxTotalLength = Len; /* 想要发送数据的总大小 */
+    SCB_CleanDCache_by_Addr((uint32_t *)Buf, Len);
+
+    Len = MIN(Len, USBD_TX_MAX_BYTES);
+    ret = USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
+    assert_param(ret == USBD_OK);
+    ret = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+    assert_param(ret == USBD_OK);
+    hcdc->TxState = 1;
+
+    if (osSemaphoreAcquire(Semaphore_TransmitCplt, Timeout) != osOK) {
+        ret = HAL_TIMEOUT;
+    }
+
+    return ret;
+}
+
+HAL_StatusTypeDef MX_USBD_CDC_Receive(uint8_t *Buf, uint16_t Len, uint32_t Timeout) {
+    HAL_StatusTypeDef ret = HAL_OK;
+
+    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceFS.pClassData;
+    if ((Len == 0) || (hcdc->RxState != 0) || (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED)) {
+        return USBD_BUSY;
+    }
+
+    if (Buf == NULL) {
+        Buf = UserRxBufferFS;
+    }
+
+    hcdc->RxState = 1;
+    UserRxLength = 0;
+    UserRxTotalLength = Len; /* 想要接收数据的总大小 */
+    ret = USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+    assert_param(ret == USBD_OK);
+
+    Len = MIN(Len, USBD_RX_MAX_BYTES);
+    hcdc->RxLength = Len;
+    ret = USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+    assert_param(ret == USBD_OK);
+
+    ret = osSemaphoreAcquire(Semaphore_ReceiveCplt, Timeout);
+    if (ret == osOK) {
+        SCB_InvalidateDCache_by_Addr((uint32_t *)Buf, Len);
+    }
+    return ret;
+}
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**
