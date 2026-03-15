@@ -100,6 +100,24 @@ LoopCopyRamDataInit:
   bcc CopyRamDataInit
 /* RAM .ram_data copy end */
 
+/* RAM .ram_not_cached copy start */
+  ldr r0, =_sram_not_cached_data
+  ldr r1, =_eram_not_cached_data
+  ldr r2, =__ram_not_cached_data_source
+  movs r3, #0
+  b LoopCopyRamNotCachedInit
+
+CopyRamNotCachedInit:
+  ldr r4, [r2, r3]
+  str r4, [r0, r3]
+  adds r3, r3, #4
+
+LoopCopyRamNotCachedInit:
+  adds r4, r0, r3
+  cmp r4, r1
+  bcc CopyRamNotCachedInit
+/* RAM .ram_not_cached copy end */
+
 /* Zero fill the bss segment. */
   ldr r2, =_sbss
   ldr r4, =_ebss
@@ -113,6 +131,62 @@ FillZerobss:
 LoopFillZerobss:
   cmp r2, r4
   bcc FillZerobss
+
+/* Zero fill the RAM bss segment. */
+  ldr r2, =_sram_bss
+  ldr r4, =_eram_bss
+  movs r3, #0
+  b LoopFillZeroRAMbss
+
+FillZeroRAMbss:
+  str  r3, [r2]
+  adds r2, r2, #4
+
+LoopFillZeroRAMbss:
+  cmp r2, r4
+  bcc FillZeroRAMbss
+
+/* Zero fill the RAM_NOT_CACHED bss segment. */
+  ldr r2, =_sram_not_cached_bss
+  ldr r4, =_eram_not_cached_bss
+  movs r3, #0
+  b LoopFillZeroRAMNotCachedbss
+
+FillZeroRAMNotCachedbss:
+  str  r3, [r2]
+  adds r2, r2, #4
+
+LoopFillZeroRAMNotCachedbss:
+  cmp r2, r4
+  bcc FillZeroRAMNotCachedbss
+
+/* Zero fill the RAM_D2 bss segment. */
+  ldr r2, =_sramd2_bss
+  ldr r4, =_eramd2_bss
+  movs r3, #0
+  b LoopFillZeroRAMD2bss
+
+FillZeroRAMD2bss:
+  str  r3, [r2]
+  adds r2, r2, #4
+
+LoopFillZeroRAMD2bss:
+  cmp r2, r4
+  bcc FillZeroRAMD2bss
+
+/* Zero fill the RAM_D3 bss segment. */
+  ldr r2, =_sramd3_bss
+  ldr r4, =_eramd3_bss
+  movs r3, #0
+  b LoopFillZeroRAMD3bss
+
+FillZeroRAMD3bss:
+  str  r3, [r2]
+  adds r2, r2, #4
+
+LoopFillZeroRAMD3bss:
+  cmp r2, r4
+  bcc FillZeroRAMD3bss
 
 /* Call static constructors */
     bl __libc_init_array

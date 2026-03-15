@@ -150,6 +150,7 @@ int main(void) {
     MX_ADC1_Init();
     MX_TIM15_Init();
     MX_SD_Init();
+    MX_USB_DEVICE_Init();
 
     // MX_SD_Test();
 
@@ -176,9 +177,9 @@ int main(void) {
     test_attr.name = "test_task";
     test_attr.stack_size = 4096;
     test_attr.priority = osPriorityNormal;
-    testTaskHandle = osThreadNew(test_task_func, NULL, &test_attr);
+    // testTaskHandle = osThreadNew(test_task_func, NULL, &test_attr);
 
-    osKernelStart();
+    // osKernelStart();
 
     while (1) {
         // uart_debug("test code\n");
@@ -319,9 +320,23 @@ void MPU_Config(void) {
     MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
     HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
-    /* RAM_D2: 0x30000000 288K */
+    /* RAM_NOT_CACHED: 0x24010000 64K */
     MPU_InitStruct.Enable = MPU_REGION_ENABLE;
     MPU_InitStruct.Number = MPU_REGION_NUMBER2;
+    MPU_InitStruct.BaseAddress = 0x24010000;
+    MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
+    MPU_InitStruct.SubRegionDisable = 0x00;
+    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+    MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+    MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+    MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+    HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+    /* RAM_D2: 0x30000000 288K */
+    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+    MPU_InitStruct.Number = MPU_REGION_NUMBER8;
     MPU_InitStruct.BaseAddress = 0x30000000;
     MPU_InitStruct.Size = MPU_REGION_SIZE_256KB;
     MPU_InitStruct.SubRegionDisable = 0x00;
@@ -335,7 +350,7 @@ void MPU_Config(void) {
 
     /* RAM_D3: 0x38000000 64K */
     MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-    MPU_InitStruct.Number = MPU_REGION_NUMBER3;
+    MPU_InitStruct.Number = MPU_REGION_NUMBER12;
     MPU_InitStruct.BaseAddress = 0x38000000;
     MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
     MPU_InitStruct.SubRegionDisable = 0x00;
@@ -352,7 +367,7 @@ void MPU_Config(void) {
     /* FLASH: 0x08000000 2048K */
     /* FLASH 编程时需要修改此处配置以及链接脚本文件 */
     MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-    MPU_InitStruct.Number = MPU_REGION_NUMBER4;
+    MPU_InitStruct.Number = MPU_REGION_NUMBER13;
     MPU_InitStruct.BaseAddress = 0x08000000;
     MPU_InitStruct.Size = MPU_REGION_SIZE_2MB;
     MPU_InitStruct.SubRegionDisable = 0x00;
@@ -366,7 +381,7 @@ void MPU_Config(void) {
 
     /* FMC_BLOCK1_SRAM: 0x60000000 64M */
     MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-    MPU_InitStruct.Number = MPU_REGION_NUMBER5;
+    MPU_InitStruct.Number = MPU_REGION_NUMBER14;
     MPU_InitStruct.BaseAddress = 0x60000000;
     MPU_InitStruct.Size = MPU_REGION_SIZE_64MB;
     MPU_InitStruct.SubRegionDisable = 0x00;

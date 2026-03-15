@@ -57,7 +57,8 @@ MEMORY
 {
 DTCMRAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 128K
 RAM_DATA (xrw)      : ORIGIN = 0x24000000, LENGTH = 64K
-RAM (xrw)           : ORIGIN = 0x24010000, LENGTH = 448K
+RAM_NO_CACHED (xrw) : ORIGIN = 0x24010000, LENGTH = 64K
+RAM (xrw)           : ORIGIN = 0x24020000, LENGTH = 384K
 RAM_D2 (xrw)        : ORIGIN = 0x30000000, LENGTH = 288K
 RAM_D3 (xrw)        : ORIGIN = 0x38000000, LENGTH = 64K
 ITCMRAM (xrw)       : ORIGIN = 0x00000000, LENGTH = 64K
@@ -269,6 +270,32 @@ SECTIONS
     . = ALIGN(4);
     _eram_bss = .;
   } >RAM
+
+  .ram_not_cached_data :
+  {
+    . = ALIGN(4);
+    _sram_not_cached_data = .;
+    *(.ram_not_cached.data)           /* .ram.data sections */
+    *(.ram_not_cached.data*)          /* .ram.data* sections */
+    . = ALIGN(4);
+    _eram_not_cached_data = .;
+  } >RAM_NO_CACHED AT> FLASH
+
+  PROVIDE( __ram_not_cached_data_source = LOADADDR(.ram_not_cached_data) );
+  PROVIDE( __ram_not_cached_data_source_end = LOADADDR(.ram_not_cached_data) + SIZEOF(.ram_not_cached_data) );
+  PROVIDE( __ram_not_cached_data_source_size = __ram_not_cached_data_source_end - __ram_not_cached_data_source );
+
+  PROVIDE(__ram_not_cached_data_size = _eram_not_cached_data - _sram_not_cached_data);
+
+  .ram_not_cached_bss (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _sram_not_cached_bss = .;
+    *(.ram_not_cached.bss)           /* .ram.data sections */
+    *(.ram_not_cached.bss*)          /* .ram.data* sections */
+    . = ALIGN(4);
+    _eram_not_cached_bss = .;
+  } >RAM_NO_CACHED
 
   /* RAM_D2 config */
   .ramd2_bss (NOLOAD) :

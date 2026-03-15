@@ -209,7 +209,7 @@ void MX_I2C1_Master_Transmit(void) {
         }
 
         // for (int i = 0; i < I2C1_TXBUFFER_SIZE; i++) {
-        //     ret = rand(random32bit);
+        //     ret = rng_rand(random32bit);
         //     if (ret != HAL_OK) {
         //         Error_Handler();
         //     }

@@ -4,12 +4,12 @@
 #include "main.h"
 #include <stdbool.h>
 
-#define rand(num) HAL_RNG_GenerateRandomNumber(&hrng1, &num)
-#define rand_it() HAL_RNG_GenerateRandomNumber_IT(&hrng1)
-#define rand_last() HAL_RNG_ReadLastRandomNumber(&hrng1)
+#define rng_rand(num) HAL_RNG_GenerateRandomNumber(&hrng1, &num)
+#define rng_rand_it() HAL_RNG_GenerateRandomNumber_IT(&hrng1)
+#define rng_rand_last() HAL_RNG_ReadLastRandomNumber(&hrng1)
 
 extern RNG_HandleTypeDef hrng1;
-extern uint32_t random;
+extern uint32_t hrng1_random;
 extern bool hrng1_complete;
 
 /**

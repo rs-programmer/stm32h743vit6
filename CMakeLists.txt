@@ -52,6 +52,7 @@ set(PUBLIB_LIBS
     "freertos"
     "fatfs"
     "fmc"
+    "usb_device"
 )
 
 set(PRIVATE_LIB_DIRS
@@ -65,6 +66,7 @@ add_subdirectory(cmake/bsp)
 add_subdirectory(cmake/freertos)
 add_subdirectory(cmake/fatfs)
 add_subdirectory(cmake/fmc)
+add_subdirectory(cmake/usb_device)
 
 add_executable(${NAME} ${SOURCE})
 
