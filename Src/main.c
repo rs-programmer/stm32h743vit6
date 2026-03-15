@@ -113,7 +113,7 @@ void test_task_func(void *argument) {
         }
 
         // MX_USBD_CDC_Receive(UserRxBufferFS, 100, osWaitForever);
-        MX_USBD_CDC_Transmit(UserTxBufferFS, 100, osWaitForever);
+        MX_USBD_CDC_Transmit(UserTxBufferFS, 100, pdMS_TO_TICKS(500));
 
         osDelay(pdMS_TO_TICKS(1000));
     }
