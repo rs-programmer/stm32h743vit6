@@ -81,6 +81,7 @@ USBD_StatusTypeDef USBD_CtlSendData(USBD_HandleTypeDef *pdev, uint8_t *pbuf, uin
     /* Set EP0 State */
     pdev->ep0_state = USBD_EP0_DATA_IN;
     pdev->ep_in[0].total_length = len;
+    pdev->ep_in[0].pbuffer = pbuf;
 
 #ifdef USBD_AVOID_PACKET_SPLIT_MPS
     pdev->ep_in[0].rem_length = 0U;
@@ -121,6 +122,7 @@ USBD_StatusTypeDef USBD_CtlPrepareRx(USBD_HandleTypeDef *pdev, uint8_t *pbuf, ui
     /* Set EP0 State */
     pdev->ep0_state = USBD_EP0_DATA_OUT;
     pdev->ep_out[0].total_length = len;
+    pdev->ep_out[0].pbuffer = pbuf;
 
 #ifdef USBD_AVOID_PACKET_SPLIT_MPS
     pdev->ep_out[0].rem_length = 0U;
