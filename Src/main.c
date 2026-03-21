@@ -9,8 +9,6 @@
 #include "fmc.h"
 #include "gpio.h"
 #include "iic.h"
-#include "portable.h"
-#include "projdefs.h"
 #include "rng.h"
 #include "rtc.h"
 #include "sd.h"
@@ -18,7 +16,7 @@
 #include "systick.h"
 #include "tim.h"
 #include "uart.h"
-#include "usbd_cdc_if.h"
+#include "usbd_hid.h"
 #include "watchdog.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -108,12 +106,9 @@ void test_task_func(void *argument) {
         // msg.u.lcd_msg.color = cnt;
         // MX_FMC_SendMsg(&msg);
 
-        for (uint32_t i = 0; i < 100; i++) {
-            UserTxBufferFS[i] = i;
-        }
-
-        // MX_USBD_CDC_Receive(UserRxBufferFS, 100, osWaitForever);
-        MX_USBD_CDC_Transmit(UserTxBufferFS, 100, pdMS_TO_TICKS(500));
+        HIDReport.xoffset = 10;
+        HIDReport.button_right = 1;
+        MX_USBD_HID_SendReport(&HIDReport);
 
         osDelay(pdMS_TO_TICKS(1000));
     }
@@ -192,13 +187,6 @@ int main(void) {
     osKernelStart();
 
     while (1) {
-        // uart_debug("test code\n");
-        for (uint32_t i = 0; i < APP_TX_DATA_SIZE; i++) {
-            UserTxBufferFS[i] = i;
-        }
-
-        MX_USBD_CDC_Receive(UserRxBufferFS, 100, 0);
-
         LED1_TOGGLE();
         HAL_Delay(500);
     }

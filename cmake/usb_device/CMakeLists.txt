@@ -8,7 +8,8 @@ set(DEFINE
 )
 
 set(PUBLIC_HEADER
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Inc
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Inc
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/HID/Inc
     ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Core/Inc
 )
 
@@ -16,12 +17,18 @@ set(PRIVATE_HEADER
 )
 
 set(SOURCE
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Src/usb_device.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Src/usbd_cdc_if.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Src/usbd_cdc.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Src/usbd_conf.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Src/usbd_desc.c
-
+    # CDC
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Src/usb_device.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Src/usbd_cdc_if.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Src/usbd_cdc.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Src/usbd_conf.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Src/usbd_desc.c
+    # HID
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/HID/Src/usb_device.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/HID/Src/usbd_hid.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/HID/Src/usbd_conf.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/HID/Src/usbd_desc.c
+    # Core
     ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Core/Src/usbd_core.c
     ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Core/Src/usbd_ctlreq.c
     ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Core/Src/usbd_ioreq.c
