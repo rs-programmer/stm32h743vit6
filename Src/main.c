@@ -106,10 +106,6 @@ void test_task_func(void *argument) {
         // msg.u.lcd_msg.color = cnt;
         // MX_FMC_SendMsg(&msg);
 
-        HIDReport.xoffset = 10;
-        HIDReport.button_right = 1;
-        MX_USBD_HID_SendReport(&HIDReport);
-
         osDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -167,6 +163,7 @@ int main(void) {
 
     // MX_RTC_SetAlarm(&hrtc1, NULL);
 
+    MX_FLASH_OB_Config();
     uart_debug("process start, revid: 0x%x, tftlcd: %d\n", HAL_GetREVID(), lcddev.id);
 
     MX_FATFS_Init();

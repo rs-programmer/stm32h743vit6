@@ -28,6 +28,7 @@ set(SOURCE
     ${CMAKE_SOURCE_DIR}/BSP/tim.c
     ${CMAKE_SOURCE_DIR}/BSP/adc.c
     ${CMAKE_SOURCE_DIR}/BSP/sd.c
+    ${CMAKE_SOURCE_DIR}/BSP/flash.c
 )
 
 set(PUBLIB_LIB_DIRS

@@ -174,7 +174,7 @@ extern "C" {
 /**
  * @brief This is the HAL system configuration section
  */
-#define VDD_VALUE (3300UL)       /*!< Value of VDD in mv */
+#define VDD_VALUE (3300UL)      /*!< Value of VDD in mv */
 #define TICK_INT_PRIORITY (0UL) /*!< tick interrupt priority */
 #define USE_RTOS 0
 #define USE_SD_TRANSCEIVER 0U /*!< use uSD Transceiver */
@@ -228,6 +228,8 @@ extern "C" {
 #define USE_HAL_UART_REGISTER_CALLBACKS 0U      /* UART register callback disabled    */
 #define USE_HAL_USART_REGISTER_CALLBACKS 0U     /* USART register callback disabled   */
 #define USE_HAL_WWDG_REGISTER_CALLBACKS 0U      /* WWDG register callback disabled    */
+#define USE_SPI_RELOAD_TRANSFER 0U              /* SPI register transfer reload disabled */
+#define USE_FLASH_ECC 1U                        /* use ECC in FLASH */
 
 /* ########################### Ethernet Configuration #########################
  */
