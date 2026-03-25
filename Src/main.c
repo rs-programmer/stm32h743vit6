@@ -16,7 +16,7 @@
 #include "systick.h"
 #include "tim.h"
 #include "uart.h"
-#include "usbd_hid.h"
+#include "usb_device.h"
 #include "watchdog.h"
 #include <stdint.h>
 #include <stdio.h>
