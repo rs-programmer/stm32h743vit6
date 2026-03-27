@@ -48,7 +48,7 @@
 /* USER CODE END Includes */
 
 /* Ensure definitions are only used by the compiler, and not by the assembler. */
-#include "main.h"
+// #include "main.h"
 #if defined(__ICCARM__) || defined(__CC_ARM) || defined(__GNUC__)
   #include <stdint.h>
   extern uint32_t SystemCoreClock;
@@ -123,7 +123,7 @@ to exclude the API function. */
  * The CMSIS-RTOS V2 FreeRTOS wrapper is dependent on the heap implementation used
  * by the application thus the correct define need to be enabled below
  */
-#define USE_FreeRTOS_HEAP_4
+#define USE_FreeRTOS_HEAP_5
 
 /* Cortex-M specific definitions. */
 #ifdef __NVIC_PRIO_BITS
@@ -170,5 +170,6 @@ standard names. */
 /* USER CODE END Defines */
 
 #define configUSE_TICKLESS_IDLE 0
+#define configAPPLICATION_ALLOCATED_HEAP 1
 
 #endif /* FREERTOS_CONFIG_H */

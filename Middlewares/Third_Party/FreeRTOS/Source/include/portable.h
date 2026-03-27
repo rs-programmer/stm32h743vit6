@@ -97,6 +97,7 @@ extern "C" {
 #endif
 
 #include "mpu_wrappers.h"
+#include "main.h"
 
 /*
  * Setup the stack of a new task so it is ready to be placed under the
@@ -149,22 +150,26 @@ typedef struct xHeapStats
  * terminated by a HeapRegions_t structure that has a size of 0.  The region
  * with the lowest start address must appear first in the array.
  */
-void vPortDefineHeapRegions( const HeapRegion_t * const pxHeapRegions ) PRIVILEGED_FUNCTION;
-
+// void vPortDefineHeapRegions( const HeapRegion_t * const pxHeapRegions ) PRIVILEGED_FUNCTION;
+#define vPortDefineHeapRegions(pxHeapRegions)
 /*
  * Returns a HeapStats_t structure filled with information about the current
  * heap state.
  */
-void vPortGetHeapStats( HeapStats_t *pxHeapStats );
-
+// void vPortGetHeapStats( HeapStats_t *pxHeapStats );
+#define vPortGetHeapStats(pxHeapStats) mxHeapGetStats(heapUserRam, pxHeapStats)
 /*
  * Map to the memory management routines required for the port.
  */
-void *pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION;
-void vPortFree( void *pv ) PRIVILEGED_FUNCTION;
-void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
-size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
-size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
+// void *pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION;
+// void vPortFree( void *pv ) PRIVILEGED_FUNCTION;
+// void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
+// size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
+// size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
+#define pvPortMalloc(xSize) mxPortMalloc(heapUserRam, xSize)
+#define vPortFree(pvPort) mxPortFree(heapUserRam, pvPort)
+#define xPortGetFreeHeapSize() mxPortGetFreeHeapSpace(heapUserRam)
+#define xPortGetMinimumEverFreeHeapSize() mxPortGetMiniHeapSpace(heapUserRam)
 
 /*
  * Setup the hardware ready for the scheduler to take control.  This generally

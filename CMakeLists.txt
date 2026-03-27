@@ -23,6 +23,7 @@ set(DEFINE
 
 set(PUBLIC_HEADER
     ${CMAKE_SOURCE_DIR}/Inc
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/include
 )
 
 set(PRIVATE_HEADER
@@ -41,18 +42,11 @@ set(SOURCE
 set(PUBLIB_LIB_DIRS
     ${LIB_DIRS}/stm32cubemx
     ${LIB_DIRS}/bsp
-    ${LIB_DIRS}/freertos
-    ${LIB_DIRS}/fatfs
-    ${LIB_DIRS}/fmc
 )
 
 set(PUBLIB_LIBS
-    "drivers"
+    "stm32cubemx"
     "bsp"
-    "freertos"
-    "fatfs"
-    "fmc"
-    "usb_device"
 )
 
 set(PRIVATE_LIB_DIRS
@@ -63,10 +57,6 @@ set(PRIVATE_LIBS
 
 add_subdirectory(cmake/stm32cubemx)
 add_subdirectory(cmake/bsp)
-add_subdirectory(cmake/freertos)
-add_subdirectory(cmake/fatfs)
-add_subdirectory(cmake/fmc)
-add_subdirectory(cmake/usb_device)
 
 add_executable(${NAME} ${SOURCE})
 

@@ -18,8 +18,8 @@ extern "C" {
 #define __RAM_DATA_ALIGN(x) __attribute__((section(".ram.data"), aligned(x)))
 #define __RAM_FUNC_ALIGN(x) __attribute__((section(".ram.func"), aligned(x)))
 #define __RAM_BSS_ALIGN(x) __attribute__((section(".ram.bss"), aligned(x)))
-#define __RAM_DATA_NOT_CACHED(x) __attribute__((section(".ram_not_cached.data"), aligned(x)))
-#define __RAM_BSS_NOT_CACHED(x) __attribute__((section(".ram_not_cached.bss"), aligned(x)))
+#define __RAM_DATA_NOT_CACHED_ALIGN(x) __attribute__((section(".ram_not_cached.data"), aligned(x)))
+#define __RAM_BSS_NOT_CACHED_ALIGN(x) __attribute__((section(".ram_not_cached.bss"), aligned(x)))
 #define __RAM_DMA __RAM_BSS_ALIGN(32)
 
 #define __RAMD2_BSS_ALIGN(x) __attribute__((section(".ramd2.bss"), aligned(x)))
@@ -67,6 +67,26 @@ extern "C" {
 
 #define uapi_min(a, b) ((a) < (b) ? (a) : (b))
 #define uapi_max(a, b) ((a) > (b) ? (a) : (b))
+
+#define HEAP_USER_RAM_SIZE (configTOTAL_HEAP_SIZE)
+#define HEAP_USER_RAM_NOT_CACHED_SIZE 1024
+#define HEAP_USER_RAM_D2_SIZE 1024
+#define HEAP_USER_RAM_D3_SIZE 1024
+
+typedef enum {
+    heapUserRam = 0,
+    heapUserRamNotCached,
+    heapUserRamD2,
+    heapUserRamD3,
+    heapUserRamNone,
+} heapUserRam_t;
+
+void mxHeapInit(void);
+// void mxHeapGetStats(heapUserRam_t ram, HeapStats_t *pxHeapStats);
+size_t mxPortGetMiniHeapSpace(heapUserRam_t ram);
+size_t mxPortGetFreeHeapSpace(heapUserRam_t ram);
+void mxPortFree(heapUserRam_t ram, void *pvPort);
+void *mxPortMalloc(heapUserRam_t ram, size_t xWantedSize);
 
 void Error_Handler(void);
 

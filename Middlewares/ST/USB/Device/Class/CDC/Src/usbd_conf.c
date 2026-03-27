@@ -328,7 +328,7 @@ void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
  * @param  pdev: Device handle
  * @retval USBD status
  */
-__RAM_BSS_NOT_CACHED(32) uint32_t hpcd_USB_OTG_FS_Setup[USBD_FS_SETUP_SIZE];
+__RAM_BSS_NOT_CACHED_ALIGN(32) uint32_t hpcd_USB_OTG_FS_Setup[USBD_FS_SETUP_SIZE];
 USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev) {
     /* Init USB Ip. */
     if (pdev->id == DEVICE_FS) {
@@ -618,7 +618,7 @@ USBD_StatusTypeDef USBD_LL_SetTestMode(USBD_HandleTypeDef *pdev, uint8_t testmod
  * @retval None
  */
 
-__RAM_BSS_NOT_CACHED(32) uint32_t mem[(sizeof(USBD_CDC_HandleTypeDef) / 4) + 1];
+__RAM_BSS_NOT_CACHED_ALIGN(32) uint32_t mem[(sizeof(USBD_CDC_HandleTypeDef) / 4) + 1];
 void *USBD_static_malloc(uint32_t size) {
     UNUSED(size);
     // static uint32_t mem[(sizeof(USBD_CDC_HandleTypeDef)/4)+1];/* On 32-bit boundary */

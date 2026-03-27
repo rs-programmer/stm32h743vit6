@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 enable_language(C ASM)
 
-set(NAME drivers)
+set(NAME stm32cubemx)
 
 set(DEFINE
     USE_PWR_LDO_SUPPLY

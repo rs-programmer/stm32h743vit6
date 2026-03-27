@@ -456,7 +456,7 @@ __STATIC_INLINE uint16_t SWAPBYTE(uint8_t *addr) {
 #endif
 
 #ifndef __ALIGN_END
-#define __ALIGN_END __RAM_DATA_NOT_CACHED(32)
+#define __ALIGN_END __RAM_DATA_NOT_CACHED_ALIGN(32)
 #endif /* __ALIGN_END */
 #ifndef __ALIGN_BEGIN
 #define __ALIGN_BEGIN

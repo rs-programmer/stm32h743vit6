@@ -19,6 +19,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_dfu_if.h"
+#include "main.h"
+#include <stdint.h>
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -61,9 +63,16 @@
  * @{
  */
 
-#define FLASH_DESC_STR "@Bank1 /0x08000000/08*128Kg; @Bank2 /0x08100000/08*128Kg"
+#define FLASH_DESC_STR                                                                             \
+    "@Internal Flash   /0x08000000/03*016Ka,01*016Kg,01*064Kg,07*128Kg,04*016Kg,01*064Kg,07*128Kg"
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
+
+#define FLASH_SECTOR_SIZE 0x20000 // 128KB per sector
+#define FLASH_BANK1_BASE 0x08000000
+#define FLASH_BANK2_BASE 0x08100000
+#define FLASH_TOTAL_SIZE 0x200000 // 2MB total
+#define FLASH_PROGRAM_SIZE 32     // 32 bytes per program
 
 /* USER CODE END PRIVATE_DEFINES */
 
@@ -128,6 +137,17 @@ static uint16_t MEM_If_GetStatus_FS(uint32_t Add, uint8_t Cmd, uint8_t *buffer);
 
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
+static uint8_t MEM_If_GetSector_FS(uint32_t Address) {
+    uint8_t Sector = 0xFF;
+
+    if (!(IS_FLASH_PROGRAM_ADDRESS_BANK1(Address) || IS_FLASH_PROGRAM_ADDRESS_BANK2(Address))) {
+        return Sector;
+    }
+
+    Sector = (Address - FLASH_BANK1_BASE) / FLASH_SECTOR_SIZE;
+    return Sector;
+}
+
 /**
  * @}
  */
@@ -152,6 +172,10 @@ __ALIGN_BEGIN USBD_DFU_MediaTypeDef USBD_DFU_fops_FS __ALIGN_END = {
  */
 uint16_t MEM_If_Init_FS(void) {
     /* USER CODE BEGIN 0 */
+    if (HAL_FLASH_Unlock() != HAL_OK) {
+        return (uint16_t)USBD_FAIL;
+    }
+
     return (USBD_OK);
     /* USER CODE END 0 */
 }
@@ -162,6 +186,10 @@ uint16_t MEM_If_Init_FS(void) {
  */
 uint16_t MEM_If_DeInit_FS(void) {
     /* USER CODE BEGIN 1 */
+    if (HAL_FLASH_Lock() != HAL_OK) {
+        return (uint16_t)USBD_FAIL;
+    }
+
     return (USBD_OK);
     /* USER CODE END 1 */
 }
@@ -174,6 +202,23 @@ uint16_t MEM_If_DeInit_FS(void) {
 uint16_t MEM_If_Erase_FS(uint32_t Add) {
     /* USER CODE BEGIN 2 */
     UNUSED(Add);
+    uint8_t Sector = MEM_If_GetSector_FS(Add);
+    if (Sector == 0xFF) {
+        return (uint16_t)USBD_FAIL;
+    }
+
+    FLASH_EraseInitTypeDef EraseInitStruct = {0};
+    uint32_t SectorError = 0;
+
+    EraseInitStruct.TypeErase = FLASH_TYPEERASE_SECTORS;
+    EraseInitStruct.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+    EraseInitStruct.Sector = Sector;
+    EraseInitStruct.NbSectors = 1;
+    EraseInitStruct.Banks = (Add < FLASH_BANK2_BASE) ? FLASH_BANK_1 : FLASH_BANK_2;
+
+    if (HAL_FLASHEx_Erase(&EraseInitStruct, &SectorError) != HAL_OK) {
+        return (uint16_t)USBD_FAIL;
+    }
 
     return (USBD_OK);
     /* USER CODE END 2 */
@@ -191,6 +236,23 @@ uint16_t MEM_If_Write_FS(uint8_t *src, uint8_t *dest, uint32_t Len) {
     UNUSED(src);
     UNUSED(dest);
     UNUSED(Len);
+
+    uint32_t FlashAddress = (uint32_t)dest;
+    uint32_t DataAddress = (uint32_t)src;
+
+    if ((FlashAddress < FLASH_BANK1_BASE) ||
+        ((FlashAddress + Len) > FLASH_BANK1_BASE + FLASH_TOTAL_SIZE) ||
+        ((Len & (FLASH_PROGRAM_SIZE - 1)) != 0)) {
+        return (uint16_t)USBD_FAIL;
+    }
+
+    while (FlashAddress < (FlashAddress + Len)) {
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, FlashAddress, DataAddress) != HAL_OK) {
+            return (uint16_t)USBD_FAIL;
+        }
+        FlashAddress += FLASH_PROGRAM_SIZE;
+        DataAddress += FLASH_PROGRAM_SIZE;
+    }
 
     return (USBD_OK);
     /* USER CODE END 3 */
@@ -210,6 +272,16 @@ uint8_t *MEM_If_Read_FS(uint8_t *src, uint8_t *dest, uint32_t Len) {
     UNUSED(dest);
     UNUSED(Len);
 
+    uint32_t FlashAddress = (uint32_t)src;
+    uint32_t DataAddress = (uint32_t)dest;
+
+    if ((FlashAddress < FLASH_BANK1_BASE) ||
+        ((FlashAddress + Len) > FLASH_BANK1_BASE + FLASH_TOTAL_SIZE)) {
+        return (uint16_t)USBD_FAIL;
+    }
+
+    memcpy(DataAddress, FlashAddress, Len);
+
     return (uint8_t *)(USBD_OK);
     /* USER CODE END 4 */
 }
@@ -228,10 +300,13 @@ uint16_t MEM_If_GetStatus_FS(uint32_t Add, uint8_t Cmd, uint8_t *buffer) {
 
     switch (Cmd) {
     case DFU_MEDIA_PROGRAM:
-
+        buffer[0] = 0x01; // 1ms
+        buffer[1] = 0x00;
         break;
 
     case DFU_MEDIA_ERASE:
+        buffer[0] = 0x0A; // 10ms
+        buffer[1] = 0x00;
     default:
 
         break;

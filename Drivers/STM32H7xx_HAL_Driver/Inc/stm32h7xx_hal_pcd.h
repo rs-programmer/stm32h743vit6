@@ -103,8 +103,8 @@ typedef struct
   HAL_LockTypeDef         Lock;        /*!< PCD peripheral status             */
   __IO PCD_StateTypeDef   State;       /*!< PCD communication state           */
   __IO  uint32_t          ErrorCode;   /*!< PCD Error code                    */
-  // uint32_t                Setup[12];   /*!< Setup packet buffer               */
-  uint32_t                Setup;        /*!< DMA 传输 Setup packet buffer               */
+  uint32_t                Setup[12];   /*!< Setup packet buffer               */
+  // uint32_t                Setup;        /*!< DMA 传输 Setup packet buffer               */
   PCD_LPM_StateTypeDef    LPM_State;   /*!< LPM State                         */
   uint32_t                BESL;
   uint32_t                FrameNumber; /*!< Store Current Frame number        */

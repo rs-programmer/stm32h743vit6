@@ -1,4 +1,3 @@
-#include "main.h"
 #include "adc.h"
 #include "cmsis_os.h"
 #include "cmsis_os2.h"
@@ -98,7 +97,7 @@ void test_task_func(void *argument) {
     fmc_msg_t msg = {0};
     msg.cmd = LCD_CMD_CLEAR;
 
-    MX_USB_DEVICE_Init();
+    // MX_USB_DEVICE_Init();
 
     while (1) {
         uart_debug("test_task_func\n");
@@ -137,21 +136,22 @@ int main(void) {
     HAL_SYSCFG_AnalogSwitchConfig(SYSCFG_SWITCH_PC2, SYSCFG_SWITCH_PC2_CLOSE);
     HAL_SYSCFG_AnalogSwitchConfig(SYSCFG_SWITCH_PC3, SYSCFG_SWITCH_PC3_CLOSE);
 
+    mxHeapInit();
     osKernelInitialize();
 
     // HAL_SysTick_Init();
     MX_GPIO_Init();
     MX_UART1_Init();
-    MX_KEY_Init();
-    MX_RNG_Init();
-    // MX_WWDG_Init();
-    // MX_IWDG_Init();
-    MX_RTC_Init();
-    MX_I2C1_Init();
-    MX_SPI1_Init(SPI_MODE_MASTER);
-    MX_ADC1_Init();
-    MX_TIM15_Init();
-    MX_SD_Init();
+    // MX_KEY_Init();
+    // MX_RNG_Init();
+    // // MX_WWDG_Init();
+    // // MX_IWDG_Init();
+    // MX_RTC_Init();
+    // MX_I2C1_Init();
+    // MX_SPI1_Init(SPI_MODE_MASTER);
+    // MX_ADC1_Init();
+    // MX_TIM15_Init();
+    // MX_SD_Init();
 
     // MX_SD_Test();
 
@@ -163,11 +163,11 @@ int main(void) {
 
     // MX_RTC_SetAlarm(&hrtc1, NULL);
 
-    MX_FLASH_OB_Config();
-    uart_debug("process start, revid: 0x%x, tftlcd: %d\n", HAL_GetREVID(), lcddev.id);
+    // MX_FLASH_OB_Config();
+    // uart_debug("process start, revid: 0x%x, tftlcd: %d\n", HAL_GetREVID(), lcddev.id);
 
-    MX_FATFS_Init();
-    MX_FMC_Init();
+    // MX_FATFS_Init();
+    // MX_FMC_Init();
 
     osThreadAttr_t first_attr = {0};
     first_attr.name = "first_task";
