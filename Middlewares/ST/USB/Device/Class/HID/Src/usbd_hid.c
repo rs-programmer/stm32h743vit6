@@ -257,7 +257,6 @@ __ALIGN_BEGIN static uint8_t HID_MOUSE_ReportDesc[HID_MOUSE_REPORT_DESC_SIZE] __
 };
 
 static uint8_t HIDInEpAdd = HID_EPIN_ADDR;
-__RAM_DMA USBD_HID_ReportTypeDef HIDReport = {0};
 
 /**
  * @}
@@ -481,15 +480,11 @@ uint8_t USBD_HID_SendReport(USBD_HandleTypeDef *pdev, uint8_t *report, uint16_t 
     return (uint8_t)USBD_OK;
 }
 
-HAL_StatusTypeDef MX_USBD_HID_SendReport(USBD_HID_ReportTypeDef *report) {
+HAL_StatusTypeDef mxUsbdHidSendReport(USBD_HID_ReportTypeDef *report) {
     uint8_t len = sizeof(USBD_HID_ReportTypeDef);
 
-    if (report == NULL) {
-        report = &HIDReport;
-    }
-
     /* DMA */
-    SCB_CleanDCache_by_Addr((uint32_t *)report, len);
+    // SCB_CleanDCache_by_Addr((uint32_t *)report, len);
     if (USBD_HID_SendReport(&hUsbDeviceFS, report, len) != USBD_OK) {
         return HAL_ERROR;
     }

@@ -18,7 +18,7 @@
 #include "tim.h"
 #include "uart.h"
 #include "usb_device.h"
-#include "usbd_cdc_if.h"
+#include "usbd_hid.h"
 #include "watchdog.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -94,10 +94,6 @@ MOUNT_FAILED:
     }
 }
 
-#define SIZE 500
-uint8_t UserTxBufferFS[SIZE];
-uint8_t UserRxBufferFS[SIZE];
-
 void test_task_func(void *argument) {
     uint16_t cnt = 0;
     HAL_StatusTypeDef ret = HAL_OK;
@@ -106,6 +102,7 @@ void test_task_func(void *argument) {
     msg.cmd = LCD_CMD_CLEAR;
 
     MX_USB_DEVICE_Init();
+    USBD_HID_ReportTypeDef hidReport = {0};
 
     while (1) {
         uart_debug("test_task_func\n");
@@ -113,16 +110,10 @@ void test_task_func(void *argument) {
         // msg.u.lcd_msg.color = cnt;
         // MX_FMC_SendMsg(&msg);
 
-        memset(UserRxBufferFS, 0, SIZE);
-        ret = mxUsbCdcReceive(UserRxBufferFS, SIZE, 100);
-        if (ret != HAL_OK) {
-            continue;
-        }
+        hidReport.xoffset += 10;
+        mxUsbdHidSendReport(&hidReport);
 
-        memcpy(UserTxBufferFS, UserRxBufferFS, strlen(UserRxBufferFS));
-        ret = mxUsbCdcTransmit(UserTxBufferFS, strlen(UserRxBufferFS), portMAX_DELAY);
-
-        // osDelay(pdMS_TO_TICKS(1000));
+        osDelay(pdMS_TO_TICKS(1000));
     }
 }
 

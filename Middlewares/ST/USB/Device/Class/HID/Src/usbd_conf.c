@@ -24,6 +24,7 @@
 #include "usbd_core.h"
 #include "usbd_def.h"
 #include "usbd_hid.h"
+#include "cmsis_os.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -336,7 +337,7 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev) {
         hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
         hpcd_USB_OTG_FS.Init.dev_endpoints = 9;
         hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
-        hpcd_USB_OTG_FS.Init.dma_enable = ENABLE;
+        hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
         hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
         hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
         hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
@@ -614,11 +615,14 @@ USBD_StatusTypeDef USBD_LL_SetTestMode(USBD_HandleTypeDef *pdev, uint8_t testmod
  * @param  size: Size of allocated memory
  * @retval None
  */
-static __RAM_BSS_NOT_CACHED_ALIGN(
-    32) uint32_t mem[(sizeof(USBD_HID_HandleTypeDef) / 4) + 1]; /* On 32-bit boundary */
+// static __RAM_BSS_NOT_CACHED_ALIGN(
+//     32) uint32_t mem[(sizeof(USBD_HID_HandleTypeDef) / 4) + 1]; /* On 32-bit boundary */
+static uint8_t *mem = NULL;
 void *USBD_static_malloc(uint32_t size) {
     UNUSED(size);
-    // static uint32_t mem[(sizeof(USBD_HID_HandleTypeDef) / 4) + 1]; /* On 32-bit boundary */
+    if (mem == NULL) {
+        mem = pvPortMalloc(size);
+    }
     return mem;
 }
 
@@ -627,7 +631,12 @@ void *USBD_static_malloc(uint32_t size) {
  * @param  p: Pointer to allocated  memory address
  * @retval None
  */
-void USBD_static_free(void *p) { UNUSED(p); }
+void USBD_static_free(void *p) {
+    if (mem != NULL) {
+        vPortFree(p);
+        mem = NULL;
+    }
+}
 
 /**
  * @brief  Delays routine for the USB device library.

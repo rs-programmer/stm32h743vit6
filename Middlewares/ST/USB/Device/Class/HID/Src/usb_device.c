@@ -62,6 +62,7 @@ USBD_HandleTypeDef hUsbDeviceFS;
  */
 void MX_USB_DEVICE_Init(void) {
     /* USER CODE BEGIN USB_DEVICE_Init_PreTreatment */
+    USBD_malloc(sizeof(USBD_HID_HandleTypeDef));
 
     /* USER CODE END USB_DEVICE_Init_PreTreatment */
 

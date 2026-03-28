@@ -129,7 +129,6 @@ typedef struct {
  */
 extern USBD_HandleTypeDef hUsbDeviceFS;
 extern USBD_ClassTypeDef USBD_HID;
-extern __RAM_DMA USBD_HID_ReportTypeDef HIDReport;
 #define USBD_HID_CLASS &USBD_HID
 /**
  * @}
@@ -145,6 +144,7 @@ uint8_t USBD_HID_SendReport(
 uint8_t USBD_HID_SendReport(USBD_HandleTypeDef *pdev, uint8_t *report, uint16_t len);
 #endif /* USE_USBD_COMPOSITE */
 uint32_t USBD_HID_GetPollingInterval(USBD_HandleTypeDef *pdev);
+HAL_StatusTypeDef mxUsbdHidSendReport(USBD_HID_ReportTypeDef *report);
 
 /**
  * @}
