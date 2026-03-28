@@ -73,21 +73,6 @@ extern "C" {
 #define HEAP_USER_RAM_D2_SIZE 1024
 #define HEAP_USER_RAM_D3_SIZE 1024
 
-typedef enum {
-    heapUserRam = 0,
-    heapUserRamNotCached,
-    heapUserRamD2,
-    heapUserRamD3,
-    heapUserRamNone,
-} heapUserRam_t;
-
-void mxHeapInit(void);
-// void mxHeapGetStats(heapUserRam_t ram, HeapStats_t *pxHeapStats);
-size_t mxPortGetMiniHeapSpace(heapUserRam_t ram);
-size_t mxPortGetFreeHeapSpace(heapUserRam_t ram);
-void mxPortFree(heapUserRam_t ram, void *pvPort);
-void *mxPortMalloc(heapUserRam_t ram, size_t xWantedSize);
-
 void Error_Handler(void);
 
 #ifdef __cplusplus

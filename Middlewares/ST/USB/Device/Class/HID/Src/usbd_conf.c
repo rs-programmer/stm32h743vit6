@@ -325,7 +325,7 @@ void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
  * @param  pdev: Device handle
  * @retval USBD status
  */
-__RAM_BSS_NOT_CACHED_ALIGN(32) uint32_t hpcd_USB_OTG_FS_Setup[USBD_FS_SETUP_SIZE];
+// __RAM_BSS_NOT_CACHED_ALIGN(32) uint32_t hpcd_USB_OTG_FS_Setup[USBD_FS_SETUP_SIZE];
 USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev) {
     /* Init USB Ip. */
     if (pdev->id == DEVICE_FS) {
@@ -345,7 +345,7 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev) {
         hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
         hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
         /* DMA */
-        hpcd_USB_OTG_FS.Setup = (uint32_t)hpcd_USB_OTG_FS_Setup;
+        // hpcd_USB_OTG_FS.Setup = (uint32_t)hpcd_USB_OTG_FS_Setup;
         if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK) {
             Error_Handler();
         }

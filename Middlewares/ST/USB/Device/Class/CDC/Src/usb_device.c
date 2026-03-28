@@ -25,6 +25,7 @@
 #include "usbd_cdc_if.h"
 #include "usbd_core.h"
 #include "usbd_desc.h"
+#include "cmsis_os.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -63,12 +64,13 @@ USBD_HandleTypeDef hUsbDeviceFS;
  */
 void MX_USB_DEVICE_Init(void) {
     /* USER CODE BEGIN USB_DEVICE_Init_PreTreatment */
+    USBD_malloc(sizeof(USBD_CDC_HandleTypeDef));
 
     /* USER CODE END USB_DEVICE_Init_PreTreatment */
-    Semaphore_TransmitCplt = osSemaphoreNew(1, 0, NULL);
-    Semaphore_ReceiveCplt = osSemaphoreNew(1, 0, NULL);
-    assert_param(Semaphore_TransmitCplt != NULL);
-    assert_param(Semaphore_ReceiveCplt != NULL);
+    semTransmitCplt = osSemaphoreNew(1, 0, NULL);
+    semReceiveCplt = osSemaphoreNew(1, 0, NULL);
+    assert_param(semTransmitCplt != NULL);
+    assert_param(semReceiveCplt != NULL);
 
     /* Init Device Library, add supported class and start the library. */
     if (USBD_Init(&hUsbDeviceFS, &FS_Desc, DEVICE_FS) != USBD_OK) {
@@ -86,7 +88,6 @@ void MX_USB_DEVICE_Init(void) {
 
     /* USER CODE BEGIN USB_DEVICE_Init_PostTreatment */
     HAL_PWREx_EnableUSBVoltageDetector();
-
     /* USER CODE END USB_DEVICE_Init_PostTreatment */
 }
 

@@ -161,6 +161,14 @@ typedef struct xHeapStats
 /*
  * Map to the memory management routines required for the port.
  */
+typedef enum {
+    heapUserRam = 0,
+    heapUserRamNotCached,
+    heapUserRamD2,
+    heapUserRamD3,
+    heapUserRamNone,
+} heapUserRam_t;
+
 // void *pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION;
 // void vPortFree( void *pv ) PRIVILEGED_FUNCTION;
 // void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
@@ -170,6 +178,12 @@ typedef struct xHeapStats
 #define vPortFree(pvPort) mxPortFree(heapUserRam, pvPort)
 #define xPortGetFreeHeapSize() mxPortGetFreeHeapSpace(heapUserRam)
 #define xPortGetMinimumEverFreeHeapSize() mxPortGetMiniHeapSpace(heapUserRam)
+void mxHeapInit(void);
+void mxHeapGetStats(heapUserRam_t ram, HeapStats_t *pxHeapStats);
+size_t mxPortGetMiniHeapSpace(heapUserRam_t ram);
+size_t mxPortGetFreeHeapSpace(heapUserRam_t ram);
+void mxPortFree(heapUserRam_t ram, void *pvPort);
+void *mxPortMalloc(heapUserRam_t ram, size_t xWantedSize);
 
 /*
  * Setup the hardware ready for the scheduler to take control.  This generally

@@ -8,14 +8,17 @@
 #include "fmc.h"
 #include "gpio.h"
 #include "iic.h"
+#include "portmacro.h"
 #include "rng.h"
 #include "rtc.h"
 #include "sd.h"
 #include "spi.h"
+#include "stm32h7xx_hal_def.h"
 #include "systick.h"
 #include "tim.h"
 #include "uart.h"
 #include "usb_device.h"
+#include "usbd_cdc_if.h"
 #include "watchdog.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -91,13 +94,18 @@ MOUNT_FAILED:
     }
 }
 
+#define SIZE 500
+uint8_t UserTxBufferFS[SIZE];
+uint8_t UserRxBufferFS[SIZE];
+
 void test_task_func(void *argument) {
     uint16_t cnt = 0;
+    HAL_StatusTypeDef ret = HAL_OK;
 
     fmc_msg_t msg = {0};
     msg.cmd = LCD_CMD_CLEAR;
 
-    // MX_USB_DEVICE_Init();
+    MX_USB_DEVICE_Init();
 
     while (1) {
         uart_debug("test_task_func\n");
@@ -105,7 +113,16 @@ void test_task_func(void *argument) {
         // msg.u.lcd_msg.color = cnt;
         // MX_FMC_SendMsg(&msg);
 
-        osDelay(pdMS_TO_TICKS(1000));
+        memset(UserRxBufferFS, 0, SIZE);
+        ret = mxUsbCdcReceive(UserRxBufferFS, SIZE, 100);
+        if (ret != HAL_OK) {
+            continue;
+        }
+
+        memcpy(UserTxBufferFS, UserRxBufferFS, strlen(UserRxBufferFS));
+        ret = mxUsbCdcTransmit(UserTxBufferFS, strlen(UserRxBufferFS), portMAX_DELAY);
+
+        // osDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -150,7 +167,7 @@ int main(void) {
     // MX_I2C1_Init();
     // MX_SPI1_Init(SPI_MODE_MASTER);
     // MX_ADC1_Init();
-    // MX_TIM15_Init();
+    MX_TIM15_Init();
     // MX_SD_Init();
 
     // MX_SD_Test();
