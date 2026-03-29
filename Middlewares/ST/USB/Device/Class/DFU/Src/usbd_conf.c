@@ -24,6 +24,7 @@
 #include "usbd_core.h"
 #include "usbd_def.h"
 #include "usbd_dfu.h"
+#include "cmsis_os.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -614,11 +615,14 @@ USBD_StatusTypeDef USBD_LL_SetTestMode(USBD_HandleTypeDef *pdev, uint8_t testmod
  * @param  size: Size of allocated memory
  * @retval None
  */
-static __RAM_BSS_NOT_CACHED_ALIGN(
-    32) uint32_t mem[(sizeof(USBD_DFU_HandleTypeDef) / 4) + 1]; /* On 32-bit boundary */
+// static __RAM_BSS_NOT_CACHED_ALIGN(
+//     32) uint32_t mem[(sizeof(USBD_DFU_HandleTypeDef) / 4) + 1]; /* On 32-bit boundary */
+static uint8_t *mem = NULL;
 void *USBD_static_malloc(uint32_t size) {
     UNUSED(size);
-    // static uint32_t mem[(sizeof(USBD_DFU_HandleTypeDef) / 4) + 1]; /* On 32-bit boundary */
+    if (mem == NULL) {
+        mem = pvPortMalloc(size);
+    }
     return mem;
 }
 
@@ -627,7 +631,12 @@ void *USBD_static_malloc(uint32_t size) {
  * @param  p: Pointer to allocated  memory address
  * @retval None
  */
-void USBD_static_free(void *p) { UNUSED(p); }
+void USBD_static_free(void *p) {
+    if (mem != NULL) {
+        vPortFree(p);
+        mem = NULL;
+    }
+}
 
 /**
  * @brief  Delays routine for the USB device library.

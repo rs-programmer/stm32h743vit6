@@ -18,7 +18,7 @@
 #include "tim.h"
 #include "uart.h"
 #include "usb_device.h"
-#include "usbd_hid.h"
+#include "usbd_dfu.h"
 #include "watchdog.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -102,16 +102,12 @@ void test_task_func(void *argument) {
     msg.cmd = LCD_CMD_CLEAR;
 
     MX_USB_DEVICE_Init();
-    USBD_HID_ReportTypeDef hidReport = {0};
 
     while (1) {
         uart_debug("test_task_func\n");
         // cnt += 100;
         // msg.u.lcd_msg.color = cnt;
         // MX_FMC_SendMsg(&msg);
-
-        hidReport.xoffset += 10;
-        mxUsbdHidSendReport(&hidReport);
 
         osDelay(pdMS_TO_TICKS(1000));
     }

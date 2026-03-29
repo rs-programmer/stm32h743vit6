@@ -6,7 +6,7 @@
  ******************************************************************************
  * @attention
  *
- * Copyright (c) 2026 STMicroelectronics.
+ * Copyright (c) 2023 STMicroelectronics.
  * All rights reserved.
  *
  * This software is licensed under terms that can be found in the LICENSE file
@@ -19,11 +19,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_dfu_if.h"
-#include "main.h"
-#include <stdint.h>
+#include "stm32h7xx_hal_flash.h"
+
 
 /* USER CODE BEGIN INCLUDE */
-
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,16 +62,9 @@
  * @{
  */
 
-#define FLASH_DESC_STR                                                                             \
-    "@Internal Flash   /0x08000000/03*016Ka,01*016Kg,01*064Kg,07*128Kg,04*016Kg,01*064Kg,07*128Kg"
+#define FLASH_DESC_STR "@Internal Flash   /0x08000000/1*128Ka,15*128Kg"
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
-
-#define FLASH_SECTOR_SIZE 0x20000 // 128KB per sector
-#define FLASH_BANK1_BASE 0x08000000
-#define FLASH_BANK2_BASE 0x08100000
-#define FLASH_TOTAL_SIZE 0x200000 // 2MB total
-#define FLASH_PROGRAM_SIZE 32     // 32 bytes per program
 
 /* USER CODE END PRIVATE_DEFINES */
 
@@ -86,6 +78,34 @@
  */
 
 /* USER CODE BEGIN PRIVATE_MACRO */
+static uint8_t getSectorByAddr(uint32_t Address) {
+    uint8_t sector = 0xFF;
+
+    if (!(IS_FLASH_PROGRAM_ADDRESS_BANK1(Address) || IS_FLASH_PROGRAM_ADDRESS_BANK2(Address))) {
+        return sector;
+    }
+
+    sector = (Address - FLASH_BANK1_BASE) / FLASH_SECTOR_SIZE;
+    if (sector > FLASH_SECTOR_7) {
+        sector -= FLASH_SECTOR_7;
+    }
+    return sector;
+}
+
+/**
+ * @brief  Gets the bank of a given address
+ * @param  Addr: Address of the FLASH Memory
+ * @retval The bank of a given address
+ */
+static uint32_t getBankByAddr(uint32_t Addr) {
+    if (IS_FLASH_PROGRAM_ADDRESS_BANK1(Addr)) {
+        return FLASH_BANK_1;
+    } else if (IS_FLASH_PROGRAM_ADDRESS_BANK2(Addr)) {
+        return FLASH_BANK_2;
+    } else {
+        return 0;
+    }
+}
 
 /* USER CODE END PRIVATE_MACRO */
 
@@ -137,17 +157,6 @@ static uint16_t MEM_If_GetStatus_FS(uint32_t Add, uint8_t Cmd, uint8_t *buffer);
 
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
-static uint8_t MEM_If_GetSector_FS(uint32_t Address) {
-    uint8_t Sector = 0xFF;
-
-    if (!(IS_FLASH_PROGRAM_ADDRESS_BANK1(Address) || IS_FLASH_PROGRAM_ADDRESS_BANK2(Address))) {
-        return Sector;
-    }
-
-    Sector = (Address - FLASH_BANK1_BASE) / FLASH_SECTOR_SIZE;
-    return Sector;
-}
-
 /**
  * @}
  */
@@ -172,10 +181,8 @@ __ALIGN_BEGIN USBD_DFU_MediaTypeDef USBD_DFU_fops_FS __ALIGN_END = {
  */
 uint16_t MEM_If_Init_FS(void) {
     /* USER CODE BEGIN 0 */
-    if (HAL_FLASH_Unlock() != HAL_OK) {
-        return (uint16_t)USBD_FAIL;
-    }
 
+    HAL_FLASH_Unlock();
     return (USBD_OK);
     /* USER CODE END 0 */
 }
@@ -186,10 +193,7 @@ uint16_t MEM_If_Init_FS(void) {
  */
 uint16_t MEM_If_DeInit_FS(void) {
     /* USER CODE BEGIN 1 */
-    if (HAL_FLASH_Lock() != HAL_OK) {
-        return (uint16_t)USBD_FAIL;
-    }
-
+    HAL_FLASH_Lock();
     return (USBD_OK);
     /* USER CODE END 1 */
 }
@@ -201,26 +205,25 @@ uint16_t MEM_If_DeInit_FS(void) {
  */
 uint16_t MEM_If_Erase_FS(uint32_t Add) {
     /* USER CODE BEGIN 2 */
-    UNUSED(Add);
-    uint8_t Sector = MEM_If_GetSector_FS(Add);
-    if (Sector == 0xFF) {
-        return (uint16_t)USBD_FAIL;
+    if (IS_FLASH_PROGRAM_ADDRESS_BANK1(Add) || IS_FLASH_PROGRAM_ADDRESS_BANK2(Add)) {
+        uint32_t PageError;
+        /* Variable contains Flash operation status */
+        HAL_StatusTypeDef status;
+        FLASH_EraseInitTypeDef eraseinitstruct;
+        eraseinitstruct.Banks = getBankByAddr(Add);
+        eraseinitstruct.TypeErase = FLASH_TYPEERASE_SECTORS;
+        eraseinitstruct.Sector = getSectorByAddr(Add);
+        eraseinitstruct.NbSectors = 1U;
+        eraseinitstruct.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+        status = HAL_FLASHEx_Erase(&eraseinitstruct, &PageError);
+
+        if (status != HAL_OK) {
+            return USBD_FAIL;
+        }
+    } else {
+        return USBD_FAIL;
     }
-
-    FLASH_EraseInitTypeDef EraseInitStruct = {0};
-    uint32_t SectorError = 0;
-
-    EraseInitStruct.TypeErase = FLASH_TYPEERASE_SECTORS;
-    EraseInitStruct.VoltageRange = FLASH_VOLTAGE_RANGE_3;
-    EraseInitStruct.Sector = Sector;
-    EraseInitStruct.NbSectors = 1;
-    EraseInitStruct.Banks = (Add < FLASH_BANK2_BASE) ? FLASH_BANK_1 : FLASH_BANK_2;
-
-    if (HAL_FLASHEx_Erase(&EraseInitStruct, &SectorError) != HAL_OK) {
-        return (uint16_t)USBD_FAIL;
-    }
-
-    return (USBD_OK);
+    return USBD_OK;
     /* USER CODE END 2 */
 }
 
@@ -233,28 +236,23 @@ uint16_t MEM_If_Erase_FS(uint32_t Add) {
  */
 uint16_t MEM_If_Write_FS(uint8_t *src, uint8_t *dest, uint32_t Len) {
     /* USER CODE BEGIN 3 */
-    UNUSED(src);
-    UNUSED(dest);
-    UNUSED(Len);
 
-    uint32_t FlashAddress = (uint32_t)dest;
-    uint32_t DataAddress = (uint32_t)src;
-
-    if ((FlashAddress < FLASH_BANK1_BASE) ||
-        ((FlashAddress + Len) > FLASH_BANK1_BASE + FLASH_TOTAL_SIZE) ||
-        ((Len & (FLASH_PROGRAM_SIZE - 1)) != 0)) {
-        return (uint16_t)USBD_FAIL;
-    }
-
-    while (FlashAddress < (FlashAddress + Len)) {
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, FlashAddress, DataAddress) != HAL_OK) {
-            return (uint16_t)USBD_FAIL;
+    if (IS_FLASH_PROGRAM_ADDRESS_BANK1(dest) || IS_FLASH_PROGRAM_ADDRESS_BANK2(dest)) {
+        // HAL_FLASH_Unlock();
+        // __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_WRPERR | FLASH_FLAG_PGSERR);
+        uint32_t i = 0;
+        for (i = 0; i < Len; i += 0x20) {
+            // SCB_CleanDCache();
+            /* Device voltage range supposed to be [2.7V to 3.6V], the operation will
+             * be done by byte */
+            if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, (uint32_t)(dest + i),
+                    (uint32_t)(src + i)) != HAL_OK) {
+                return USBD_FAIL;
+            }
         }
-        FlashAddress += FLASH_PROGRAM_SIZE;
-        DataAddress += FLASH_PROGRAM_SIZE;
+        return USBD_OK;
     }
-
-    return (USBD_OK);
+    return USBD_FAIL;
     /* USER CODE END 3 */
 }
 
@@ -268,21 +266,17 @@ uint16_t MEM_If_Write_FS(uint8_t *src, uint8_t *dest, uint32_t Len) {
 uint8_t *MEM_If_Read_FS(uint8_t *src, uint8_t *dest, uint32_t Len) {
     /* Return a valid address to avoid HardFault */
     /* USER CODE BEGIN 4 */
-    UNUSED(src);
-    UNUSED(dest);
-    UNUSED(Len);
+    if (IS_FLASH_PROGRAM_ADDRESS_BANK1(src) || IS_FLASH_PROGRAM_ADDRESS_BANK2(src)) {
+        uint32_t i = 0;
+        uint8_t *psrc = src;
 
-    uint32_t FlashAddress = (uint32_t)src;
-    uint32_t DataAddress = (uint32_t)dest;
-
-    if ((FlashAddress < FLASH_BANK1_BASE) ||
-        ((FlashAddress + Len) > FLASH_BANK1_BASE + FLASH_TOTAL_SIZE)) {
-        return (uint16_t)USBD_FAIL;
+        for (i = 0; i < Len; i++) {
+            dest[i] = *psrc++;
+        }
     }
 
-    memcpy(DataAddress, FlashAddress, Len);
-
-    return (uint8_t *)(USBD_OK);
+    /* Return a valid address to avoid HardFault */
+    return (uint8_t *)(dest);
     /* USER CODE END 4 */
 }
 
@@ -295,20 +289,21 @@ uint8_t *MEM_If_Read_FS(uint8_t *src, uint8_t *dest, uint32_t Len) {
  */
 uint16_t MEM_If_GetStatus_FS(uint32_t Add, uint8_t Cmd, uint8_t *buffer) {
     /* USER CODE BEGIN 5 */
-    UNUSED(Add);
-    UNUSED(buffer);
+
+    uint16_t FLASH_PROGRAM_TIME = 1;
+    uint16_t FLASH_ERASE_TIME = 1;
 
     switch (Cmd) {
     case DFU_MEDIA_PROGRAM:
-        buffer[0] = 0x01; // 1ms
-        buffer[1] = 0x00;
+        buffer[1] = (uint8_t)FLASH_PROGRAM_TIME;
+        buffer[2] = 0;
+        buffer[3] = 0;
         break;
-
     case DFU_MEDIA_ERASE:
-        buffer[0] = 0x0A; // 10ms
-        buffer[1] = 0x00;
     default:
-
+        buffer[1] = (uint8_t)FLASH_ERASE_TIME;
+        buffer[2] = 0;
+        buffer[3] = 0;
         break;
     }
     return (USBD_OK);
