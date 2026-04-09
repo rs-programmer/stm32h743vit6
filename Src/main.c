@@ -18,7 +18,6 @@
 #include "tim.h"
 #include "uart.h"
 #include "usb_device.h"
-#include "usbd_dfu.h"
 #include "watchdog.h"
 #include <stdint.h>
 #include <stdio.h>

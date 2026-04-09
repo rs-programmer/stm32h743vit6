@@ -447,16 +447,8 @@ __STATIC_INLINE uint16_t SWAPBYTE(uint8_t *addr) {
    with the DMA during the transaction process should be 4-bytes aligned */
 
 #if defined(__GNUC__) && !defined(__CC_ARM) /* GNU Compiler */
-#ifdef __ALIGN_END
-#undef __ALIGN_END
-#endif
-
-#ifdef __ALIGN_BEGIN
-#undef __ALIGN_BEGIN
-#endif
-
 #ifndef __ALIGN_END
-#define __ALIGN_END
+#define __ALIGN_END __attribute__((aligned(4U)))
 #endif /* __ALIGN_END */
 #ifndef __ALIGN_BEGIN
 #define __ALIGN_BEGIN

@@ -19,12 +19,11 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include "cmsis_os.h"
 #include "stm32h7xx.h"
 #include "stm32h7xx_hal.h"
 #include "usbd_core.h"
 #include "usbd_def.h"
-#include "usbd_dfu.h"
+#include "usbd_msc.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -101,7 +100,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *pcdHandle) {
         __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
 
         /* Peripheral interrupt init */
-        HAL_NVIC_SetPriority(OTG_FS_IRQn, 10, 0);
+        HAL_NVIC_SetPriority(OTG_FS_IRQn, 0, 0);
         HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
         /* USER CODE BEGIN USB_OTG_FS_MspInit 1 */
 
@@ -326,7 +325,6 @@ void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
  * @param  pdev: Device handle
  * @retval USBD status
  */
-// __RAM_BSS_NOT_CACHED_ALIGN(32) uint32_t hpcd_USB_OTG_FS_Setup[USBD_FS_SETUP_SIZE];
 USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev) {
     /* Init USB Ip. */
     if (pdev->id == DEVICE_FS) {
@@ -345,8 +343,6 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev) {
         hpcd_USB_OTG_FS.Init.battery_charging_enable = DISABLE;
         hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
         hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
-        /* DMA */
-        // hpcd_USB_OTG_FS.Setup = (uint32_t)hpcd_USB_OTG_FS_Setup;
         if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK) {
             Error_Handler();
         }
@@ -615,14 +611,9 @@ USBD_StatusTypeDef USBD_LL_SetTestMode(USBD_HandleTypeDef *pdev, uint8_t testmod
  * @param  size: Size of allocated memory
  * @retval None
  */
-// static __RAM_BSS_NOT_CACHED_ALIGN(
-//     32) uint32_t mem[(sizeof(USBD_DFU_HandleTypeDef) / 4) + 1]; /* On 32-bit boundary */
-static uint8_t *mem = NULL;
 void *USBD_static_malloc(uint32_t size) {
     UNUSED(size);
-    if (mem == NULL) {
-        mem = pvPortMalloc(size);
-    }
+    static uint32_t mem[(sizeof(USBD_MSC_BOT_HandleTypeDef) / 4) + 1]; /* On 32-bit boundary */
     return mem;
 }
 
@@ -631,12 +622,7 @@ void *USBD_static_malloc(uint32_t size) {
  * @param  p: Pointer to allocated  memory address
  * @retval None
  */
-void USBD_static_free(void *p) {
-    if (mem != NULL) {
-        vPortFree(p);
-        mem = NULL;
-    }
-}
+void USBD_static_free(void *p) { UNUSED(p); }
 
 /**
  * @brief  Delays routine for the USB device library.

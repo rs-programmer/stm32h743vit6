@@ -21,7 +21,6 @@
 #include "usbd_dfu_if.h"
 #include "stm32h7xx_hal_flash.h"
 
-
 /* USER CODE BEGIN INCLUDE */
 /* USER CODE END INCLUDE */
 
@@ -290,8 +289,8 @@ uint8_t *MEM_If_Read_FS(uint8_t *src, uint8_t *dest, uint32_t Len) {
 uint16_t MEM_If_GetStatus_FS(uint32_t Add, uint8_t Cmd, uint8_t *buffer) {
     /* USER CODE BEGIN 5 */
 
-    uint16_t FLASH_PROGRAM_TIME = 1;
-    uint16_t FLASH_ERASE_TIME = 1;
+    uint16_t FLASH_PROGRAM_TIME = 100;
+    uint16_t FLASH_ERASE_TIME = 100;
 
     switch (Cmd) {
     case DFU_MEDIA_PROGRAM:
