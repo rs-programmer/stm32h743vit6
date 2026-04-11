@@ -119,3 +119,25 @@ HAL_StatusTypeDef MX_FLASH_Sector_Program(
     ret |= HAL_FLASH_Lock();
     return ret;
 }
+
+HAL_StatusTypeDef mxFlashSectorErase(uint8_t bank, uint8_t sector, uint8_t sectorCnt) {
+    FLASH_EraseInitTypeDef eraseInit = {0};
+    uint32_t sectorError = 0;
+    eraseInit.TypeErase = FLASH_TYPEERASE_SECTORS;
+    eraseInit.Banks = bank;
+    eraseInit.Sector = sector;
+    eraseInit.NbSectors = sectorCnt;
+    eraseInit.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+    return HAL_FLASHEx_Erase(&eraseInit, &sectorError);
+}
+
+HAL_StatusTypeDef mxFlashProgram(uint32_t DstAddress, uint32_t SrcAddress, uint32_t SrcSize) {
+    HAL_StatusTypeDef ret = HAL_OK;
+    uint8_t bank = (DstAddress < FLASH_BANK2_BASE) ? FLASH_BANK_1 : FLASH_BANK_2;
+    uint8_t sector = (DstAddress - ((bank == FLASH_BANK_1) ? FLASH_BANK1_BASE : FLASH_BANK2_BASE)) /
+                     FLASH_SECTOR_SIZE;
+    uint8_t sectorCnt = (SrcSize + FLASH_SECTOR_SIZE - 1) / FLASH_SECTOR_SIZE;
+
+    ret |= MX_FLASH_Sector_Program(bank, sector, SrcAddress, SrcSize);
+    return ret;
+}

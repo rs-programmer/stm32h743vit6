@@ -23,8 +23,8 @@ set(PUBLIC_HEADER
     # USB Device headers
     # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/CDC/Inc
     # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/HID/Inc
-    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Inc
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Inc
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Inc
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Inc
     ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Core/Inc
 )
 
@@ -86,20 +86,20 @@ set(SOURCE
     # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/HID/Src/usbd_conf.c
     # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/HID/Src/usbd_desc.c
     # DFU
-    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Src/usb_device.c
-    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Src/usbd_dfu_if.c
-    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Src/usbd_conf.c
-    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Src/usbd_desc.c
-    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Src/usbd_dfu.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Src/usb_device.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Src/usbd_dfu_if.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Src/usbd_conf.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Src/usbd_desc.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/DFU/Src/usbd_dfu.c
     # MSC
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usb_device.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_conf.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_desc.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_msc_bot.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_msc_data.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_msc_scsi.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_msc.c
-    ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_storage_if.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usb_device.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_conf.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_desc.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_msc_bot.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_msc_data.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_msc_scsi.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_msc.c
+    # ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Class/MSC/Src/usbd_storage_if.c
     # Core
     ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Core/Src/usbd_core.c
     ${CMAKE_SOURCE_DIR}/Middlewares/ST/USB/Device/Core/Src/usbd_ctlreq.c

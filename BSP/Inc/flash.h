@@ -12,4 +12,6 @@ void MX_FLASH_OB_Config(void);
 HAL_StatusTypeDef MX_FLASH_Sector_Program(
     uint8_t Banks, uint8_t Sector, uint32_t SrcAddress, uint32_t SrcSize);
 
+HAL_StatusTypeDef mxFlashSectorErase(uint8_t bank, uint8_t sector, uint8_t sectorCnt);
+
 #endif

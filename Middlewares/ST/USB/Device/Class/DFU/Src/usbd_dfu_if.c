@@ -19,6 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_dfu_if.h"
+#include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_flash.h"
 
 /* USER CODE BEGIN INCLUDE */
@@ -145,12 +146,12 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
  * @{
  */
 
-static uint16_t MEM_If_Init_FS(void);
-static uint16_t MEM_If_Erase_FS(uint32_t Add);
-static uint16_t MEM_If_Write_FS(uint8_t *src, uint8_t *dest, uint32_t Len);
-static uint8_t *MEM_If_Read_FS(uint8_t *src, uint8_t *dest, uint32_t Len);
-static uint16_t MEM_If_DeInit_FS(void);
-static uint16_t MEM_If_GetStatus_FS(uint32_t Add, uint8_t Cmd, uint8_t *buffer);
+uint16_t MEM_If_Init_FS(void);
+uint16_t MEM_If_Erase_FS(uint32_t Add);
+uint16_t MEM_If_Write_FS(uint8_t *src, uint8_t *dest, uint32_t Len);
+uint8_t *MEM_If_Read_FS(uint8_t *src, uint8_t *dest, uint32_t Len);
+uint16_t MEM_If_DeInit_FS(void);
+uint16_t MEM_If_GetStatus_FS(uint32_t Add, uint8_t Cmd, uint8_t *buffer);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
 
