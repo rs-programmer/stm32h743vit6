@@ -35,6 +35,73 @@ SD_HandleTypeDef hsd1;
 /* USER CODE BEGIN BeforeInitSection */
 /* can be used to modify / undefine following code or add code */
 /* USER CODE END BeforeInitSection */
+static uint8_t sd_init = 0;
+HAL_StatusTypeDef MX_SD_Init(void) {
+
+    HAL_StatusTypeDef ret = HAL_OK;
+
+    if (sd_init > 0) {
+        return HAL_OK;
+    }
+
+    /* 240MHZ */
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SDMMC;
+    PeriphClkInitStruct.SdmmcClockSelection = RCC_SDMMCCLKSOURCE_PLL;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
+        Error_Handler();
+    }
+
+    __HAL_RCC_SDMMC1_CLK_ENABLE();
+
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    /**
+     * @brief 初始化SDMMC1 GPIO 引脚
+     * PC8     ------> SDMMC1_D0
+     * PC9     ------> SDMMC1_D1
+     * PC10    ------> SDMMC1_D2
+     * PC11    ------> SDMMC1_D3
+     * PC12    ------> SDMMC1_CK
+     * PD2     ------> SDMMC1_CMD
+     */
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF12_SDIO1;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_2;
+    HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+    hsd1.Instance = SDMMC1;
+    hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING; // 大多数SD卡都支持上升沿
+    hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_ENABLE;
+    hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
+    hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_ENABLE;
+    hsd1.Init.ClockDiv = 3;
+    ret = HAL_SD_Init(&hsd1);
+    if (ret != HAL_OK) {
+        Error_Handler();
+    }
+
+    /* 双缓冲 IDMA */
+    // ret = HAL_SDEx_ConfigDMAMultiBuffer(&hsd1, hsd1_buffer0, hsd1_buffer1, SD_BLOCK_COUNT);
+    if (ret != HAL_OK) {
+        Error_Handler();
+    }
+
+    HAL_NVIC_SetPriority(SDMMC1_IRQn, 10, 0);
+    HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
+    sd_init = 1;
+
+    return ret;
+}
+
+void SDMMC1_IRQHandler(void) { HAL_SD_IRQHandler(&hsd1); }
+
 /**
   * @brief  Initializes the SD card device.
   * @retval SD status
@@ -48,15 +115,15 @@ __weak uint8_t BSP_SD_Init(void)
     return MSD_ERROR_SD_NOT_PRESENT;
   }
   /* HAL SD initialization */
-  sd_state = HAL_SD_Init(&hsd1);
+  sd_state = MX_SD_Init();
   /* Configure SD Bus width (4 bits mode selected) */
   if (sd_state == MSD_OK)
   {
     /* Enable wide operation */
-    if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK)
-    {
-      sd_state = MSD_ERROR;
-    }
+    // if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK)
+    // {
+    //   sd_state = MSD_ERROR;
+    // }
   }
 
   return sd_state;

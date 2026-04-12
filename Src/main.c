@@ -75,7 +75,7 @@ void first_task_func(void *argument) {
 
 MOUNT_SUCCESS:
     FIL file;
-    const char *write_str = "你好，我是nice⭐测试文件\n";
+    const char *write_str = "你好，我是nice⭐⭐⭐⭐⭐⭐测试文件\n";
     ret = f_open(&file, "0:/test.txt", FA_WRITE | FA_CREATE_ALWAYS);
     if (ret == FR_OK) {
         f_write(&file, write_str, strlen(write_str), NULL);
@@ -169,20 +169,20 @@ int main(void) {
     // MX_FLASH_OB_Config();
     // uart_debug("process start, revid: 0x%x, tftlcd: %d\n", HAL_GetREVID(), lcddev.id);
 
-    // MX_FATFS_Init();
+    MX_FATFS_Init();
     // MX_FMC_Init();
 
     osThreadAttr_t first_attr = {0};
     first_attr.name = "first_task";
     first_attr.priority = osPriorityNormal;
-    first_attr.stack_size = 4096;
-    // firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
+    first_attr.stack_size = 4096 * 2;
+    firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
 
     osThreadAttr_t test_attr = {0};
     test_attr.name = "test_task";
     test_attr.stack_size = 4096;
     test_attr.priority = osPriorityNormal;
-    testTaskHandle = osThreadNew(test_task_func, NULL, &test_attr);
+    // testTaskHandle = osThreadNew(test_task_func, NULL, &test_attr);
 
     osKernelStart();
 
