@@ -75,14 +75,26 @@ void first_task_func(void *argument) {
 
 MOUNT_SUCCESS:
     FIL file;
-    const char *write_str = "你好，我是nice⭐⭐⭐⭐⭐⭐测试文件\n";
-    ret = f_open(&file, "0:/test.txt", FA_WRITE | FA_CREATE_ALWAYS);
-    if (ret == FR_OK) {
-        f_write(&file, write_str, strlen(write_str), NULL);
-        f_close(&file);
-        uart_debug("Write file test.txt success!\n");
-    } else {
-        uart_debug("f_open failed! err: %d\n", ret);
+    uint32_t cnt = 0;
+    UINT bw = 0;
+    char data[512] = {0};
+    ret = f_open(&file, "0:/test001.txt", FA_WRITE | FA_OPEN_ALWAYS);
+
+    while (1) {
+        uart_debug("first_task_func\n");
+        LED1_TOGGLE();
+        if (cnt < 100) {
+            sprintf(data, "sssssddddd %d\n", cnt++);
+            ret = f_write(&file, data, strlen(data), &bw);
+            uart_debug("Write file test.txt, cnt: %d, ret: %d\n", cnt, ret);
+        }
+
+        if (cnt == 100) {
+            ret = f_close(&file);
+            cnt++;
+            uart_debug("Close file test.txt, ret: %d\n", ret);
+        }
+        osDelay(pdMS_TO_TICKS(500));
     }
 
 MOUNT_FAILED:
