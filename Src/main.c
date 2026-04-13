@@ -194,7 +194,7 @@ int main(void) {
     test_attr.name = "test_task";
     test_attr.stack_size = 4096;
     test_attr.priority = osPriorityNormal;
-    // testTaskHandle = osThreadNew(test_task_func, NULL, &test_attr);
+    testTaskHandle = osThreadNew(test_task_func, NULL, &test_attr);
 
     osKernelStart();
 

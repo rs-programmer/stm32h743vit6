@@ -131,9 +131,15 @@ uint8_t *USBD_FS_InterfaceStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *lengt
  * @{
  */
 
-USBD_DescriptorsTypeDef FS_Desc = {USBD_FS_DeviceDescriptor, USBD_FS_LangIDStrDescriptor,
-    USBD_FS_ManufacturerStrDescriptor, USBD_FS_ProductStrDescriptor, USBD_FS_SerialStrDescriptor,
-    USBD_FS_ConfigStrDescriptor, USBD_FS_InterfaceStrDescriptor};
+USBD_DescriptorsTypeDef FS_Desc = {
+    USBD_FS_DeviceDescriptor,
+    USBD_FS_LangIDStrDescriptor,
+    USBD_FS_ManufacturerStrDescriptor,
+    USBD_FS_ProductStrDescriptor,
+    USBD_FS_SerialStrDescriptor,
+    USBD_FS_ConfigStrDescriptor,
+    USBD_FS_InterfaceStrDescriptor,
+};
 
 #if defined(__ICCARM__) /* IAR Compiler */
 #pragma data_alignment = 4
