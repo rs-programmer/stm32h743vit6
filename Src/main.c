@@ -188,7 +188,7 @@ int main(void) {
     first_attr.name = "first_task";
     first_attr.priority = osPriorityNormal;
     first_attr.stack_size = 4096 * 2;
-    firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
+    // firstTaskHandle = osThreadNew(first_task_func, NULL, &first_attr);
 
     osThreadAttr_t test_attr = {0};
     test_attr.name = "test_task";
