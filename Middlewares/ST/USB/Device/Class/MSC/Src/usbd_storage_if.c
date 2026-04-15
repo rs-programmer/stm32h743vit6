@@ -236,7 +236,7 @@ int8_t STORAGE_IsWriteProtected_FS(uint8_t lun) {
  */
 int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len) {
     /* 在中断中调用的，只可使用轮询模式 */
-    blk_len = 1;
+    // blk_len = 1;
     if (BSP_SD_ReadBlocks((uint32_t *)buf, blk_addr, blk_len, STORAGE_TIMEOUT) == MSD_OK) {
         return (USBD_OK);
     }
@@ -254,7 +254,7 @@ int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t bl
  */
 int8_t STORAGE_Write_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len) {
     /* 在中断中调用的，只可使用轮询模式 */
-    blk_len = 1;
+    // blk_len = 1;
     if (BSP_SD_WriteBlocks((uint32_t *)buf, blk_addr, blk_len, STORAGE_TIMEOUT) == MSD_OK) {
         return (USBD_OK);
     }
