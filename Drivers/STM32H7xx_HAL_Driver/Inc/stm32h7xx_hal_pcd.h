@@ -104,7 +104,6 @@ typedef struct
   __IO PCD_StateTypeDef   State;       /*!< PCD communication state           */
   __IO  uint32_t          ErrorCode;   /*!< PCD Error code                    */
   uint32_t                Setup[12];   /*!< Setup packet buffer               */
-  // uint32_t                Setup;        /*!< DMA 传输 Setup packet buffer               */
   PCD_LPM_StateTypeDef    LPM_State;   /*!< LPM State                         */
   uint32_t                BESL;
   uint32_t                FrameNumber; /*!< Store Current Frame number        */
@@ -382,8 +381,8 @@ PCD_StateTypeDef HAL_PCD_GetState(PCD_HandleTypeDef const *hpcd);
   * @{
   */
 #if defined (USB_OTG_FS) || defined (USB_OTG_HS)
-#define USB_OTG_FS_WAKEUP_EXTI_LINE                                   (0x1U << 12)  /*!< USB FS EXTI Line WakeUp Interrupt */
-#define USB_OTG_HS_WAKEUP_EXTI_LINE                                   (0x1U << 11)  /*!< USB HS EXTI Line WakeUp Interrupt */
+#define USB_OTG_FS_WAKEUP_EXTI_LINE                                   (0x1UL << 12)  /*!< USB FS EXTI Line WakeUp Interrupt */
+#define USB_OTG_HS_WAKEUP_EXTI_LINE                                   (0x1UL << 11)  /*!< USB HS EXTI Line WakeUp Interrupt */
 #endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
 
 
