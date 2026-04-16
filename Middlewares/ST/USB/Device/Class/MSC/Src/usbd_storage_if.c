@@ -171,11 +171,11 @@ USBD_StorageTypeDef USBD_Storage_Interface_fops_FS = {
 int8_t STORAGE_Init_FS(uint8_t lun) {
     /* USER CODE BEGIN 2 */
     UNUSED(lun);
-    if (BSP_SD_Init() == MSD_OK) {
-        return USBD_OK;
+    if (BSP_SD_Init() != MSD_OK) {
+        return USBD_FAIL;
     }
 
-    return USBD_FAIL;
+    return USBD_OK;
     /* USER CODE END 2 */
 }
 
@@ -206,10 +206,10 @@ int8_t STORAGE_GetCapacity_FS(uint8_t lun, uint32_t *block_num, uint16_t *block_
 int8_t STORAGE_IsReady_FS(uint8_t lun) {
     /* USER CODE BEGIN 4 */
     UNUSED(lun);
-    if (BSP_SD_GetCardState() == SD_TRANSFER_OK) {
-        return (USBD_OK);
+    if (BSP_SD_GetCardState() != SD_TRANSFER_OK) {
+        return (USBD_FAIL);
     }
-    return (USBD_FAIL);
+    return (USBD_OK);
     /* USER CODE END 4 */
 }
 
@@ -237,10 +237,10 @@ int8_t STORAGE_IsWriteProtected_FS(uint8_t lun) {
 int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len) {
     /* 在中断中调用的，只可使用轮询模式 */
     // blk_len = 1;
-    if (BSP_SD_ReadBlocks((uint32_t *)buf, blk_addr, blk_len, STORAGE_TIMEOUT) == MSD_OK) {
-        return (USBD_OK);
+    if (BSP_SD_ReadBlocks((uint32_t *)buf, blk_addr, blk_len, STORAGE_TIMEOUT) != MSD_OK) {
+        return (USBD_FAIL);
     }
-    return (USBD_FAIL);
+    return (USBD_OK);
     /* USER CODE END 6 */
 }
 
@@ -255,10 +255,14 @@ int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t bl
 int8_t STORAGE_Write_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len) {
     /* 在中断中调用的，只可使用轮询模式 */
     // blk_len = 1;
-    if (BSP_SD_WriteBlocks((uint32_t *)buf, blk_addr, blk_len, STORAGE_TIMEOUT) == MSD_OK) {
-        return (USBD_OK);
+    // if (BSP_SD_Erase(blk_addr, blk_addr) != MSD_OK) {
+    //     return (USBD_FAIL);
+    // }
+
+    if (BSP_SD_WriteBlocks((uint32_t *)buf, blk_addr, blk_len, STORAGE_TIMEOUT) != MSD_OK) {
+        return (USBD_FAIL);
     }
-    return (USBD_FAIL);
+    return (USBD_OK);
     /* USER CODE END 7 */
 }
 
