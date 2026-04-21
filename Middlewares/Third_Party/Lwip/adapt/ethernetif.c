@@ -622,6 +622,16 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef *ethHandle) {
         GPIO_InitStruct.Alternate = GPIO_AF11_ETH;
         HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+        /* 复位引脚配置 */
+        GPIO_InitStruct.Pin = GPIO_PIN_8;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+        /* 高电平，不使能复位 */
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+
         /* Peripheral interrupt init */
         HAL_NVIC_SetPriority(ETH_IRQn, 5, 0);
         HAL_NVIC_EnableIRQ(ETH_IRQn);
