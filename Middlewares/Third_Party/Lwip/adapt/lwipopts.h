@@ -124,7 +124,7 @@ extern __RAMD2_BSS_ALIGN(4) uint8_t lwip_ramd2_heap[LWIP_RAM_HEAP_SIZE];
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 #define LWIP_MEM_ALIGN_BUFFER(size) (((size) + MEM_ALIGNMENT - 1U))
-#define LWIP_DECLARE_MEMORY_ALIGNED(variable_name, size) __RAMD2_BSS_ALIGN(1) u8_t variable_name[LWIP_MEM_ALIGN_BUFFER(size)]
+#define LWIP_DECLARE_MEMORY_ALIGNED(variable_name, size) __RAMD2_BSS_ALIGN(MEM_ALIGNMENT) u8_t variable_name[LWIP_MEM_ALIGN_BUFFER(size)]
 
 /* USER CODE END 1 */
 
