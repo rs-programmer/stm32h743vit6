@@ -113,7 +113,7 @@ void test_task_func(void *argument) {
     fmc_msg_t msg = {0};
     msg.cmd = LCD_CMD_CLEAR;
 
-    MX_USB_DEVICE_Init();
+    // MX_USB_DEVICE_Init();
     MX_LWIP_Init();
 
     while (1) {

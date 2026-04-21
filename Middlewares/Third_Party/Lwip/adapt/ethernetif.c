@@ -111,10 +111,9 @@ __attribute__((at(0x30000080))) ETH_DMADescTypeDef
 
 #elif defined(__GNUC__) /* GNU Compiler */
 
-ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT]
-    __attribute__((section(".RxDescripSection"))); /* Ethernet Rx DMA Descriptors */
-ETH_DMADescTypeDef DMATxDscrTab[ETH_TX_DESC_CNT]
-    __attribute__((section(".TxDescripSection"))); /* Ethernet Tx DMA Descriptors */
+/* DMA描述符 存放在非缓存内存 */
+__RAM_BSS_NOT_CACHED_ALIGN(MEM_ALIGNMENT) ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT];
+__RAM_BSS_NOT_CACHED_ALIGN(MEM_ALIGNMENT) ETH_DMADescTypeDef DMATxDscrTab[ETH_TX_DESC_CNT];
 
 #endif
 
@@ -126,7 +125,7 @@ extern u8_t memp_memory_RX_POOL_base[];
 __attribute__((section(".Rx_PoolSection"))) extern u8_t memp_memory_RX_POOL_base[];
 
 #elif defined(__GNUC__) /* GNU */
-__attribute__((section(".Rx_PoolSection"))) extern u8_t memp_memory_RX_POOL_base[];
+extern u8_t memp_memory_RX_POOL_base[];
 #endif
 
 /* USER CODE BEGIN 2 */
