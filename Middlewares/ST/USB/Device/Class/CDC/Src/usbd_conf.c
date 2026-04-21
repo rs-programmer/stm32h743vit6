@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+#include "cmsis_os.h"
 #include "main.h"
 #include "stm32h743xx.h"
 #include "stm32h7xx.h"
@@ -26,7 +27,6 @@
 #include "usbd_cdc.h"
 #include "usbd_core.h"
 #include "usbd_def.h"
-#include "cmsis_os.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -619,13 +619,13 @@ USBD_StatusTypeDef USBD_LL_SetTestMode(USBD_HandleTypeDef *pdev, uint8_t testmod
  * @retval None
  */
 
-// __RAM_BSS_NOT_CACHED_ALIGN(32) uint32_t mem[(sizeof(USBD_CDC_HandleTypeDef) / 4) + 1];
-static uint8_t *mem = NULL;
+static __RAM_BSS_NOT_CACHED_ALIGN(32) uint32_t mem[(sizeof(USBD_CDC_HandleTypeDef) / 4) + 1];
+// static uint8_t *mem = NULL;
 void *USBD_static_malloc(uint32_t size) {
     UNUSED(size);
-    if (mem == NULL) {
-        mem = pvPortMalloc(size);
-    }
+    // if (mem == NULL) {
+    //     mem = pvPortMalloc(size);
+    // }
     return mem;
 }
 

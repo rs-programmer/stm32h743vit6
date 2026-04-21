@@ -123,7 +123,7 @@ to exclude the API function. */
  * The CMSIS-RTOS V2 FreeRTOS wrapper is dependent on the heap implementation used
  * by the application thus the correct define need to be enabled below
  */
-#define USE_FreeRTOS_HEAP_5
+#define USE_FreeRTOS_HEAP_4
 
 /* Cortex-M specific definitions. */
 #ifdef __NVIC_PRIO_BITS
@@ -170,6 +170,6 @@ standard names. */
 /* USER CODE END Defines */
 
 #define configUSE_TICKLESS_IDLE 0
-#define configAPPLICATION_ALLOCATED_HEAP 1
+#define configAPPLICATION_ALLOCATED_HEAP 0
 
 #endif /* FREERTOS_CONFIG_H */

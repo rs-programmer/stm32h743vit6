@@ -615,14 +615,14 @@ USBD_StatusTypeDef USBD_LL_SetTestMode(USBD_HandleTypeDef *pdev, uint8_t testmod
  * @param  size: Size of allocated memory
  * @retval None
  */
-// static __RAM_BSS_NOT_CACHED_ALIGN(
-//     32) uint32_t mem[(sizeof(USBD_HID_HandleTypeDef) / 4) + 1]; /* On 32-bit boundary */
-static uint8_t *mem = NULL;
+static __RAM_BSS_NOT_CACHED_ALIGN(
+    32) uint32_t mem[(sizeof(USBD_HID_HandleTypeDef) / 4) + 1]; /* On 32-bit boundary */
+// static uint8_t *mem = NULL;
 void *USBD_static_malloc(uint32_t size) {
     UNUSED(size);
-    if (mem == NULL) {
-        mem = pvPortMalloc(size);
-    }
+    // if (mem == NULL) {
+    //     mem = pvPortMalloc(size);
+    // }
     return mem;
 }
 

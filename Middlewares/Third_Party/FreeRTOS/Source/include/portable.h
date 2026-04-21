@@ -156,34 +156,34 @@ typedef struct xHeapStats
  * Returns a HeapStats_t structure filled with information about the current
  * heap state.
  */
-// void vPortGetHeapStats( HeapStats_t *pxHeapStats );
-#define vPortGetHeapStats(pxHeapStats) mxHeapGetStats(heapUserRam, pxHeapStats)
+void vPortGetHeapStats( HeapStats_t *pxHeapStats );
+// #define vPortGetHeapStats(pxHeapStats) mxHeapGetStats(heapUserRam, pxHeapStats)
 /*
  * Map to the memory management routines required for the port.
  */
-typedef enum {
-    heapUserRam = 0,
-    heapUserRamNotCached,
-    heapUserRamD2,
-    heapUserRamD3,
-    heapUserRamNone,
-} heapUserRam_t;
+// typedef enum {
+//     heapUserRam = 0,
+//     heapUserRamNotCached,
+//     heapUserRamD2,
+//     heapUserRamD3,
+//     heapUserRamNone,
+// } heapUserRam_t;
 
-// void *pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION;
-// void vPortFree( void *pv ) PRIVILEGED_FUNCTION;
-// void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
-// size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
-// size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
-#define pvPortMalloc(xSize) mxPortMalloc(heapUserRam, xSize)
-#define vPortFree(pvPort) mxPortFree(heapUserRam, pvPort)
-#define xPortGetFreeHeapSize() mxPortGetFreeHeapSpace(heapUserRam)
-#define xPortGetMinimumEverFreeHeapSize() mxPortGetMiniHeapSpace(heapUserRam)
-void mxHeapInit(void);
-void mxHeapGetStats(heapUserRam_t ram, HeapStats_t *pxHeapStats);
-size_t mxPortGetMiniHeapSpace(heapUserRam_t ram);
-size_t mxPortGetFreeHeapSpace(heapUserRam_t ram);
-void mxPortFree(heapUserRam_t ram, void *pvPort);
-void *mxPortMalloc(heapUserRam_t ram, size_t xWantedSize);
+void *pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION;
+void vPortFree( void *pv ) PRIVILEGED_FUNCTION;
+void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
+size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
+size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
+// #define pvPortMalloc(xSize) mxPortMalloc(heapUserRam, xSize)
+// #define vPortFree(pvPort) mxPortFree(heapUserRam, pvPort)
+// #define xPortGetFreeHeapSize() mxPortGetFreeHeapSpace(heapUserRam)
+// #define xPortGetMinimumEverFreeHeapSize() mxPortGetMiniHeapSpace(heapUserRam)
+// void mxHeapInit(void);
+// void mxHeapGetStats(heapUserRam_t ram, HeapStats_t *pxHeapStats);
+// size_t mxPortGetMiniHeapSpace(heapUserRam_t ram);
+// size_t mxPortGetFreeHeapSpace(heapUserRam_t ram);
+// void mxPortFree(heapUserRam_t ram, void *pvPort);
+// void *mxPortMalloc(heapUserRam_t ram, size_t xWantedSize);
 
 /*
  * Setup the hardware ready for the scheduler to take control.  This generally
