@@ -37,6 +37,7 @@ static void ethernet_link_status_updated(struct netif *netif);
 void Error_Handler(void);
 
 /* USER CODE BEGIN 1 */
+__RAMD2_BSS_ALIGN(MEM_ALIGNMENT) uint8_t lwip_ramd2_heap[LWIP_RAM_HEAP_SIZE];
 
 /* USER CODE END 1 */
 

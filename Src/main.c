@@ -114,7 +114,7 @@ void test_task_func(void *argument) {
     msg.cmd = LCD_CMD_CLEAR;
 
     MX_USB_DEVICE_Init();
-    // MX_LWIP_Init();
+    MX_LWIP_Init();
 
     while (1) {
         uart_debug("test_task_func\n");

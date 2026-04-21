@@ -37,6 +37,14 @@
 extern "C" {
 #endif
 
+#define LWIP_NETIF_LOOPBACK 1
+#define LWIP_IPV6 0
+#define LWIP_IPV4 1
+
+#define LWIP_RAM_HEAP_SIZE (1024 * 40) /* 40 KB */
+
+extern __RAMD2_BSS_ALIGN(4) uint8_t lwip_ramd2_heap[LWIP_RAM_HEAP_SIZE];
+
 /* STM32CubeMX Specific Parameters (not defined in opt.h) ---------------------*/
 /* Parameters set in STM32CubeMX LwIP Configuration GUI -*/
 /*----- WITH_RTOS enabled (Since FREERTOS is set) -----*/
@@ -53,8 +61,8 @@ extern "C" {
 #define ETH_RX_BUFFER_SIZE 1536
 /*----- Value in opt.h for MEM_ALIGNMENT: 1 -----*/
 #define MEM_ALIGNMENT 4
-/*----- Default Value for H7 devices: 0x30004000 -----*/
-#define LWIP_RAM_HEAP_POINTER 0x30004000
+/*----- Default Value for H7 devices: lwip_ramd2_heap -----*/
+#define LWIP_RAM_HEAP_POINTER (lwip_ramd2_heap)
 /*----- Value supported for H7 devices: 1 -----*/
 #define LWIP_SUPPORT_CUSTOM_PBUF 1
 /*----- Value in opt.h for LWIP_ETHERNET: LWIP_ARP || PPPOE_SUPPORT -*/
@@ -115,6 +123,8 @@ extern "C" {
 #define CHECKSUM_CHECK_ICMP6 0
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
+#define LWIP_MEM_ALIGN_BUFFER(size) (((size) + MEM_ALIGNMENT - 1U))
+#define LWIP_DECLARE_MEMORY_ALIGNED(variable_name, size) __RAMD2_BSS_ALIGN(1) u8_t variable_name[LWIP_MEM_ALIGN_BUFFER(size)]
 
 /* USER CODE END 1 */
 
