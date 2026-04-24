@@ -117,7 +117,7 @@ void test_task_func(void *argument) {
     MX_LWIP_Init();
 
     while (1) {
-        uart_debug("test_task_func\n");
+        printf("test_task_func\n");
         // cnt += 100;
         // msg.u.lcd_msg.color = cnt;
         // MX_FMC_SendMsg(&msg);

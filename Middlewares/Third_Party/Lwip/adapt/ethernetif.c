@@ -43,7 +43,7 @@
 #define ETHIF_TX_TIMEOUT (2000U)
 /* USER CODE BEGIN OS_THREAD_STACK_SIZE_WITH_RTOS */
 /* Stack size of the interface thread */
-#define INTERFACE_THREAD_STACK_SIZE (350)
+#define INTERFACE_THREAD_STACK_SIZE (4096)
 /* USER CODE END OS_THREAD_STACK_SIZE_WITH_RTOS */
 /* Network interface name */
 #define IFNAME0 's'
@@ -125,7 +125,7 @@ extern u8_t memp_memory_RX_POOL_base[];
 __attribute__((section(".Rx_PoolSection"))) extern u8_t memp_memory_RX_POOL_base[];
 
 #elif defined(__GNUC__) /* GNU */
-extern u8_t memp_memory_RX_POOL_base[];
+extern __RAMD2_BSS_ALIGN(MEM_ALIGNMENT) u8_t memp_memory_RX_POOL_base[];
 #endif
 
 /* USER CODE BEGIN 2 */
@@ -146,8 +146,13 @@ int32_t ETH_PHY_IO_WriteReg(uint32_t DevAddr, uint32_t RegAddr, uint32_t RegVal)
 int32_t ETH_PHY_IO_GetTick(void);
 
 lan8742_Object_t LAN8742;
-lan8742_IOCtx_t LAN8742_IOCtx = {ETH_PHY_IO_Init, ETH_PHY_IO_DeInit, ETH_PHY_IO_WriteReg,
-    ETH_PHY_IO_ReadReg, ETH_PHY_IO_GetTick};
+lan8742_IOCtx_t LAN8742_IOCtx = {
+    ETH_PHY_IO_Init,
+    ETH_PHY_IO_DeInit,
+    ETH_PHY_IO_WriteReg,
+    ETH_PHY_IO_ReadReg,
+    ETH_PHY_IO_GetTick,
+};
 
 /* USER CODE BEGIN 3 */
 

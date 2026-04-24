@@ -13,7 +13,7 @@
             "preBuild": "${command:st-stm32-ide-debug-launch.build}",
             "runEntry": "main",
             "serverSerialNumber": "37FF71064E573436BE941A43",
-            "serverPort": "61234",
+            "serverPort": "60000",
             "imagesAndSymbols": [
                 {
                     "imageFileName": "${command:st-stm32-ide-debug-launch.get-projects-binary-from-context1}"

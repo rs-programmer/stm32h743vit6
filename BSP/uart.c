@@ -142,12 +142,12 @@ void uart_debug(const char *fmt, ...) {
     HAL_UART_Transmit(&huart1, (uint8_t *)debug_buf, debug_len, HAL_MAX_DELAY);
 }
 
-int fputc(int ch, FILE *f) {
+int __io_putchar(int ch) {
     HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
     return ch;
 }
 
-int fgetc(FILE *f) {
+int __io_getchar(void) {
     uint8_t ch = 0;
     HAL_UART_Receive(&huart1, &ch, 1, 0xFFFF);
     return ch;

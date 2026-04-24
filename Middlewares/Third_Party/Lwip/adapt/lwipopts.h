@@ -23,6 +23,7 @@
 #define __LWIPOPTS__H__
 
 #include "main.h"
+#include "uart.h"
 
 /*-----------------------------------------------------------------------------*/
 /* Current version of LwIP supported by CubeMx: 2.2.1 -*/
@@ -82,7 +83,7 @@ extern __RAMD2_BSS_ALIGN(4) uint8_t lwip_ramd2_heap[LWIP_RAM_HEAP_SIZE];
 /*----- Value in opt.h for LWIP_NETIF_LINK_CALLBACK: 0 -----*/
 #define LWIP_NETIF_LINK_CALLBACK 1
 /*----- Value in opt.h for TCPIP_THREAD_STACKSIZE: 0 -----*/
-#define TCPIP_THREAD_STACKSIZE 1024
+#define TCPIP_THREAD_STACKSIZE 4096
 /*----- Value in opt.h for TCPIP_THREAD_PRIO: 1 -----*/
 #define TCPIP_THREAD_PRIO 24
 /*----- Value in opt.h for TCPIP_MBOX_SIZE: 0 -----*/
@@ -124,7 +125,48 @@ extern __RAMD2_BSS_ALIGN(4) uint8_t lwip_ramd2_heap[LWIP_RAM_HEAP_SIZE];
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 #define LWIP_MEM_ALIGN_BUFFER(size) (((size) + MEM_ALIGNMENT - 1U))
-#define LWIP_DECLARE_MEMORY_ALIGNED(variable_name, size) __RAMD2_BSS_ALIGN(MEM_ALIGNMENT) u8_t variable_name[LWIP_MEM_ALIGN_BUFFER(size)]
+#define LWIP_DECLARE_MEMORY_ALIGNED(variable_name, size)                                           \
+    __RAMD2_BSS_ALIGN(MEM_ALIGNMENT) u8_t variable_name[LWIP_MEM_ALIGN_BUFFER(size)]
+
+#define LWIP_DEBUG
+
+#define LWIP_DBG_MIN_LEVEL      LWIP_DBG_LEVEL_ALL
+
+#define LWIP_DBG_TYPES_ON       LWIP_DBG_ON
+#define ETHARP_DEBUG            LWIP_DBG_ON
+#define NETIF_DEBUG             LWIP_DBG_ON
+#define PBUF_DEBUG              LWIP_DBG_ON
+#define API_LIB_DEBUG           LWIP_DBG_OFF
+#define API_MSG_DEBUG           LWIP_DBG_OFF
+#define SOCKETS_DEBUG           LWIP_DBG_OFF
+#define ICMP_DEBUG              LWIP_DBG_ON
+#define IGMP_DEBUG              LWIP_DBG_OFF
+#define INET_DEBUG              LWIP_DBG_OFF
+#define IP_DEBUG                LWIP_DBG_ON
+#define IP_REASS_DEBUG          LWIP_DBG_OFF
+#define RAW_DEBUG               LWIP_DBG_OFF
+#define MEM_DEBUG               LWIP_DBG_ON
+#define MEMP_DEBUG              LWIP_DBG_ON
+#define SYS_DEBUG               LWIP_DBG_OFF
+#define TIMERS_DEBUG            LWIP_DBG_OFF
+#define TCP_DEBUG               LWIP_DBG_OFF
+#define TCP_INPUT_DEBUG         LWIP_DBG_OFF
+#define TCP_FR_DEBUG            LWIP_DBG_OFF
+#define TCP_RTO_DEBUG           LWIP_DBG_OFF
+#define TCP_CWND_DEBUG          LWIP_DBG_OFF
+#define TCP_WND_DEBUG           LWIP_DBG_OFF
+#define TCP_OUTPUT_DEBUG        LWIP_DBG_OFF
+#define TCP_RST_DEBUG           LWIP_DBG_OFF
+#define TCP_QLEN_DEBUG          LWIP_DBG_OFF
+#define UDP_DEBUG               LWIP_DBG_OFF
+#define TCPIP_DEBUG             LWIP_DBG_OFF
+#define SLIP_DEBUG              LWIP_DBG_OFF
+#define DHCP_DEBUG              LWIP_DBG_OFF
+#define AUTOIP_DEBUG            LWIP_DBG_OFF
+#define ACD_DEBUG               LWIP_DBG_OFF
+#define DNS_DEBUG               LWIP_DBG_OFF
+#define IP6_DEBUG               LWIP_DBG_OFF
+#define DHCP6_DEBUG             LWIP_DBG_OFF
 
 /* USER CODE END 1 */
 
