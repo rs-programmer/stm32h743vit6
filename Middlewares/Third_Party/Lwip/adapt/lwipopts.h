@@ -159,7 +159,7 @@ extern __RAMD2_BSS_ALIGN(4) uint8_t lwip_ramd2_heap[LWIP_RAM_HEAP_SIZE];
 #define TCP_RST_DEBUG           LWIP_DBG_OFF
 #define TCP_QLEN_DEBUG          LWIP_DBG_OFF
 #define UDP_DEBUG               LWIP_DBG_OFF
-#define TCPIP_DEBUG             LWIP_DBG_OFF
+#define TCPIP_DEBUG             LWIP_DBG_ON
 #define SLIP_DEBUG              LWIP_DBG_OFF
 #define DHCP_DEBUG              LWIP_DBG_OFF
 #define AUTOIP_DEBUG            LWIP_DBG_OFF
