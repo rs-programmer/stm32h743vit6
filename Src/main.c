@@ -113,9 +113,6 @@ void test_task_func(void *argument) {
     fmc_msg_t msg = {0};
     msg.cmd = LCD_CMD_CLEAR;
 
-    // MX_USB_DEVICE_Init();
-    MX_LWIP_Init();
-
     while (1) {
         printf("test_task_func\n");
         // cnt += 100;
@@ -182,8 +179,11 @@ int main(void) {
     // MX_FLASH_OB_Config();
     // uart_debug("process start, revid: 0x%x, tftlcd: %d\n", HAL_GetREVID(), lcddev.id);
 
-    MX_FATFS_Init();
+    // MX_FATFS_Init();
     // MX_FMC_Init();
+
+    // MX_USB_DEVICE_Init();
+    MX_LWIP_Init();
 
     osThreadAttr_t first_attr = {0};
     first_attr.name = "first_task";
